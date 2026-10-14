@@ -76,3 +76,20 @@ users, buildings, rooms(user_id/building_id), visits(room_id), reviews(user_id/b
 ## 현재 구현된 로컬 개발 연결
 
 `VITE_DATA_MODE=listing-api`에서 React는 `GET/POST /api/listings`, `PATCH/DELETE /api/listings/{id}`를 사용합니다. Spring Boot와 MySQL에 매물만 저장하고 후기·방문 기록은 브라우저에 남습니다. 위 `/rooms`, `/reviews`, `/visits` 전체 계약과 인증·권한은 후속 구현 범위입니다. 이 부분 구현을 전체 API 모드 완료로 해석하지 마세요.
+
+## SFR-002 광고 원본 등록 API (현재 구현)
+
+`listing-api` 모드의 광고 등록 영역은 아래 별도 API를 사용합니다. 요청의 `Content-Type`은 브라우저가 설정하는 `multipart/form-data`이고 응답은 JSON입니다.
+
+| 메서드 | 경로 | 요청 | 성공 응답 |
+|---|---|---|---|
+| GET | `/api/advertisements` | 없음 | 광고 원본 배열, 최신순 |
+| GET | `/api/advertisements/{id}` | 없음 | 광고 원본 1개 |
+| POST | `/api/advertisements` | `Idempotency-Key` 헤더 + multipart 필드 | 201 광고 원본 |
+| POST | `/api/advertisements/{id}/confirm` | 없음 | 200 확정된 광고 원본 |
+
+multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최대 10MB), `addressHint`(최대 160자), `unitLabel`(최대 40자), `sourceUrl`(HTTP(S), 최대 1,000자)입니다. 글 또는 이미지 중 하나는 필수입니다. 서버는 확장자·MIME·파일 내용을 확인하고 이미지 크기도 제한합니다. `Idempotency-Key`는 8~128자의 영문·숫자·하이픈으로 만듭니다. 같은 키와 내용으로 재요청하면 기존 광고를 돌려주며, 내용이 달라지면 409를 반환합니다. 이미지 원본은 공개 URL로 제공하지 않습니다.
+
+응답 필드: `id`, `status`(`DRAFT` 또는 `EXTRACTION_PENDING`), `originalText`, `addressHint`, `unitLabel`, `sourceUrl`, `imageName`, `imageContentType`, `imageSize`, `createdAt`, `confirmedAt`. 저장소 내부 경로와 파일 키는 응답에 포함하지 않습니다. `confirm` 재호출은 같은 확정 상태를 반환하며 현재는 작업 큐에 넣거나 OCR을 실행하지 않습니다. 등록·확정은 SFR-003의 입력 단계이고 기존 `/api/listings`와 자동 연결되지 않습니다.
+
+이 API는 로컬 개발 전용이며 현재 모든 광고 원본을 조회할 수 있습니다. SFR-001 인증 완료 시 생성자 소유권, 조회·확정 권한, 이미지 접근 정책을 서버에서 추가해야 합니다. 운영 환경에서는 스키마 마이그레이션과 동시 요청 멱등성 검증도 필요합니다.

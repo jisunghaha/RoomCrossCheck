@@ -152,7 +152,7 @@ npm run build
 
 코드·문서·설정 예시를 커밋하고 팀 리뷰 후 main에 합칩니다. `.env`, `node_modules/`, DB 비밀정보는 커밋하지 않습니다. 패키지를 추가하면 `package.json`과 `package-lock.json`을 함께 반영합니다.
 
-## 7. 로컬 매물 DB 연결 (기본 구조)
+## 9. 로컬 매물 DB 연결 (기본 구조)
 
 `backend/`의 Spring Boot API는 `/api/listings`에 매물 등록·조회·수정·삭제를 제공합니다. Docker와 Node.js 22.12 이상이 필요합니다.
 
@@ -172,3 +172,19 @@ docker compose down  # DB 데이터 볼륨 유지
 ```
 
 금액은 원 단위 정수, 면적은 ㎡, 미입력은 `null`입니다. 광고 원문은 `original`에 보관하고 새 매물마다 별도 building ID를 발급합니다. `backend/src/main/resources/application.yml`의 JPA `ddl-auto=update`는 로컬 개발용입니다. 정식 운영 전에는 스키마 마이그레이션과 인증·소유권 검증이 필요합니다. 비밀번호가 담긴 `.env`와 빌드 산출물은 Git에서 제외합니다.
+
+## 10. SFR-002 광고 원본 등록 (로컬 개발)
+
+`listing-api` 모드의 매물 화면에 **광고 원본 등록** 영역이 있습니다. 글 또는 JPG·PNG 이미지(최대 10MB)를 입력하고 주소 힌트·동호수·출처 URL을 선택적으로 넣어 임시 저장할 수 있습니다. **원본 확정**은 상태를 `DRAFT`에서 `EXTRACTION_PENDING`으로 바꾸지만 OCR·AI를 실행하지는 않습니다. 기존 매물 등록과 광고 원본 등록은 아직 별도 흐름입니다. 예시 매물과 실제 DB 광고 원본을 섞어 표시하지 않습니다.
+
+광고 메타데이터는 MySQL `advertisements` 테이블에 저장하고, 원본 이미지는 공개 경로가 아닌 Docker `room_uploads` 볼륨에 보관합니다. `docker compose down`은 두 볼륨을 유지합니다. `down -v`는 저장 데이터를 지우므로 팀 데이터를 다루는 환경에서 사용하지 마세요. 등록 요청은 `Idempotency-Key`를 사용해 같은 요청을 재시도해도 원본을 하나만 남기며, 같은 키로 다른 내용을 보내면 409를 반환합니다. 자세한 필드와 응답은 [API_HANDOFF.md](./API_HANDOFF.md)에 있습니다.
+
+```bash
+./scripts/dev-up.sh
+VITE_DATA_MODE=listing-api VITE_API_BASE_URL=/api npm run dev
+npm test
+npm run build
+./scripts/build-backend.sh
+```
+
+현재 광고 조회·확정 API에는 로그인과 사용자별 접근 제어가 없습니다. 외부 공개나 실사용 광고 업로드에는 사용하지 말고, SFR-001 인증·소유권 검증을 연결한 뒤 사용하세요. SFR-003 담당자는 이 원본을 바탕으로 OCR·AI 추출 결과와 실패·재시도 상태를 추가하면 됩니다.

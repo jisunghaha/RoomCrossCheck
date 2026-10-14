@@ -15,7 +15,10 @@ services:
       retries: 20
   backend:
     build: ./backend
+    volumes:
+      - room_uploads:/data/advertisements
     environment:
+      AD_STORAGE_DIR: /data/advertisements
       DB_URL: jdbc:mysql://db:3306/roomcrosscheck
       DB_USER: room_app
       DB_PASSWORD: ${ROOM_DB_PASSWORD:?Set ROOM_DB_PASSWORD in .env}
@@ -26,3 +29,4 @@ services:
       - "127.0.0.1:8080:8080"
 volumes:
   room_mysql:
+  room_uploads:
