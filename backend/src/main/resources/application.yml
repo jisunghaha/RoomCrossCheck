@@ -17,5 +17,6 @@ gemini:
   enabled: ${GEMINI_ENABLED:false}
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-2.5-flash}
+  base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 server:
   address: 0.0.0.0
