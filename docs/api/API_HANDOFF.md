@@ -2,7 +2,7 @@
 
 ## 구조와 전환
 
-React 화면 → RoomContext → repository.js → Spring Boot REST API → MySQL.
+React 화면 → RoomContext → app/data 저장소 어댑터 → Spring Boot REST API → MySQL.
 MySQL 접속 계정은 Spring Boot 서버 설정에만 둡니다. 브라우저에 공개되는 VITE_ 변수에는 API 주소와 모드만 넣습니다.
 
 1. `frontend/`에서 `.env.example`을 `.env`로 복사합니다.
@@ -11,7 +11,7 @@ MySQL 접속 계정은 Spring Boot 서버 설정에만 둡니다. 브라우저�
 4. `VITE_DATA_MODE=api`, `VITE_API_BASE_URL=http://localhost:8080/api`로 바꿉니다.
 5. Vite를 재시작합니다. 배포용 파일은 환경 설정 후 다시 빌드합니다.
 
-API 모드는 localStorage를 읽거나 쓰지 않고, 가상 데이터를 화면에 대신 표시하지 않습니다. 로컬 데이터 자동 이관은 제공하지 않습니다. 서버 ID와 서버가 반환한 저장 결과를 사용합니다. 화면 코드는 DB 테이블 구조에 의존하지 않습니다. 아래 계약을 변경하면 `frontend/src/app/data/createRepository.js`의 API 어댑터에서 DTO를 변환하세요.
+API 모드는 localStorage를 읽거나 쓰지 않고, 가상 데이터를 화면에 대신 표시하지 않습니다. 로컬 데이터 자동 이관은 제공하지 않습니다. 서버 ID와 서버가 반환한 저장 결과를 사용합니다. 화면 코드는 DB 테이블 구조에 의존하지 않습니다. 아래 계약을 변경하면 `frontend/src/app/data/apiRepository.js`의 API 어댑터에서 DTO를 변환하세요.
 
 ## 현재 어댑터가 호출하는 API
 
@@ -65,7 +65,11 @@ fetch는 `credentials: include`를 사용합니다. 실제 로그인 화면과 �
 
 ## MySQL 설계 연결 지점
 
-users, buildings, rooms(user_id/building_id), visits(room_id), reviews(user_id/building_id), review_scores(review_id/category)로 분리할 수 있습니다. 공식 기록은 별도 테이블로 출처와 조회 시각을 보존합니다. 금액은 정수형, 면적은 DECIMAL을 고려하고 DTO에서는 JS 숫자 범위를 검증합니다. 이 문서는 연결 계약이며 실제 DDL·서버·DB 생성은 포함하지 않습니다.
+초기 DDL은 [데이터베이스 설계](../database/README.md), [ERD](../database/ERD.md), [데이터 사전](../database/SCHEMA.md)에 정의합니다. 현재 SQL만 작성했으며 실제 DB 서버 적용과 Spring Boot Repository 구현은 아직 하지 않았습니다.
+
+핵심 테이블은 users, buildings, rooms, visits, visit_check_items, reviews, review_scores의 7개입니다. Google 식별자는 users.google_id, 광고 원문은 rooms.original_text, 태그·옵션 목록은 rooms의 JSON 컬럼에 저장합니다. 후기 작성자·본문·공개 상태는 reviews에 두며 후기 ID는 reviews.id입니다. review_scores.category는 현재 프론트와 같은 한글 항목명입니다.
+
+Room의 original은 original_text, areaType은 EXCLUSIVE/SUPPLY/UNKNOWN을 전용/공급/미상으로 변환합니다. 미식별 building_id=NULL 지원과 여러 방문 이력은 계약·어댑터를 함께 확장해야 합니다. 기본 체크 항목 key는 [항목 정의](../database/REFERENCE_VALUES.md)의 고정 매핑을 사용합니다. 공식 조회 구현 전에는 official=null이며 조회·대조 저장 모델은 후속 migration에서 추가합니다. 현재 화면의 응답 계약은 실제 API 구현 전까지 그대로 유지합니다.
 
 ## 검증 범위
 

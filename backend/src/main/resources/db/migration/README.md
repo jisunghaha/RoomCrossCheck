@@ -1,5 +1,7 @@
-# DB migration 작성 위치
+# DB migration
 
-MySQL 저장 adapter를 구현할 때 사용할 버전 관리된 SQL migration 위치다. 현재 DDL과 Flyway/Liquibase 의존성은 추가하지 않았다.
+`V1__initial_schema.sql`은 MySQL 8.4 핵심 7개 테이블 생성 SQL이다. 기본 항목 정의 테이블과 V2 seed는 사용하지 않는다.
 
-도구를 합의한 뒤 사용자, 광고 원본·확정 매물, 건물·공식 조회·대조 결과, 방문·항목·사진, 공개 후기·평가, 게시글·댓글·반응·신고의 관계를 설계한다. 개인 매물 삭제 시 방문은 함께 삭제하고 공개 후기는 유지한다. 후기별 같은 평가 항목과 사용자별 같은 대상 반응 중복은 제약 조건으로 막는다. 금액은 원 단위 정수, 면적은 DECIMAL과 기준·범위를 보존한다.
+[실행 안내](../../../../../../docs/database/README.md), [ERD](../../../../../../docs/database/ERD.md), [컬럼 설명](../../../../../../docs/database/SCHEMA.md)을 참조한다.
+
+아직 실제 서버에 적용하지 않은 초안이다. 빈 DB에 한 번 적용하고 이후 변경은 새 migration으로 추가한다. 이미 이전 스키마를 적용한 DB는 별도 변경 SQL이 필요하다. 현재 Spring Boot에 Flyway/JPA 연결이 없어 앱 시작 시 자동 실행되지 않는다.

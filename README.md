@@ -17,10 +17,11 @@ RoomCrossCheck/
 │                            # 외부 API가 필요한 기능은 client 포함
 └── docs/
     ├── architecture/         # GRASP·SOLID, 책임과 의존 방향
-    └── api/                  # 프론트·백엔드 API 계약
+    ├── api/                  # 프론트·백엔드 API 계약
+    └── database/             # MySQL ERD·데이터 사전·생성 안내
 ```
 
-프론트엔드는 기존 화면과 local/API 저장 모드를 유지합니다. 백엔드는 시작 가능한 기본 골격과 기능별 패키지를 준비한 상태이며 업무 API, Google 로그인, MySQL·Redis, OCR·공공 API는 아직 구현하지 않았습니다. 빈 기능 폴더의 `README.md`와 `package-info.java`는 앞으로 구현할 위치와 책임을 설명합니다.
+프론트엔드는 기존 화면과 local/API 저장 모드를 유지합니다. 백엔드는 시작 가능한 기본 골격과 기능별 패키지를 준비한 상태이며 업무 API, Google 로그인, MySQL·Redis, OCR·공공 API는 아직 구현하지 않았습니다. 빈 기능 폴더의 `README.md`와 `package-info.java`는 앞으로 구현할 위치와 책임을 설명합니다. 핵심 7개 테이블의 MySQL 스키마·ERD·생성 SQL은 작성했으며 실제 서버 적용과 Spring Boot 연결은 아직 하지 않았습니다.
 
 ## 프론트엔드 실행
 
@@ -60,5 +61,6 @@ mvn spring-boot:run
 - [프론트엔드 개발 가이드](frontend/README.md)
 - [백엔드 개발 가이드](backend/README.md)
 - [현재 프론트엔드 API 계약](docs/api/API_HANDOFF.md)
+- [MySQL 설계·ERD·생성 SQL](docs/database/README.md)
 
 `chore/split-frontend-backend`에서 구조를 정리하고 기능별 브랜치에서 구현합니다. 의존 경로가 바뀌면 관련 테스트와 문서를 함께 갱신합니다. 개인 매물을 삭제해도 건물에 연결한 공개 후기는 유지하며, 조회 실패와 비교할 값이 없는 상태는 구분합니다.
