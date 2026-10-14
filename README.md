@@ -2,7 +2,7 @@
 
 원룸 광고, 공식 건축물 정보, 방문 기록과 거주 후기를 함께 확인하고 관심 매물을 비교하는 서비스를 개발합니다. 이 README는 팀원이 기존 코드를 수정하고 새 기능을 연결할 때 참고하는 안내입니다.
 
-**현재 저장소의 구조는 React 프론트엔드 구조입니다.** Spring Boot 백엔드와 MySQL 구현은 아직 포함되어 있지 않습니다. 화면의 기본 흐름을 출발점으로 삼고, 계획서의 요구사항에 맞춰 기능과 API를 확장합니다.
+**현재 저장소에는 React 프론트엔드와 로컬 개발용 Spring Boot·MySQL 매물 저장 API가 있습니다.** 후기·방문 API와 인증은 아직 구현되지 않았습니다. 화면의 기본 흐름을 출발점으로 삼고, 계획서의 요구사항에 맞춰 기능과 API를 확장합니다.
 
 ## 1. 개발 시작하기
 
@@ -151,3 +151,40 @@ npm run build
 동작을 바꾸면 관련 테스트를 추가·수정합니다. `tests/domain.test.js`는 계산 규칙, `tests/App.test.jsx`는 사용자 흐름, `tests/repository.test.jsx`는 저장소·API 실패 흐름을 확인하는 출발점입니다. 화면 변경은 브라우저에서 모바일 크기와 입력·모달 동작도 확인합니다. 실제 서버 연결은 프론트 테스트와 별도로 검증합니다.
 
 코드·문서·설정 예시를 커밋하고 팀 리뷰 후 main에 합칩니다. `.env`, `node_modules/`, DB 비밀정보는 커밋하지 않습니다. 패키지를 추가하면 `package.json`과 `package-lock.json`을 함께 반영합니다.
+
+## 9. 로컬 매물 DB 연결 (기본 구조)
+
+`backend/`의 Spring Boot API는 `/api/listings`에 매물 등록·조회·수정·삭제를 제공합니다. Docker와 Node.js 22.12 이상이 필요합니다.
+
+```bash
+./scripts/dev-up.sh            # MySQL과 백엔드 시작, .env의 DB 비밀번호가 비어 있으면 생성
+./scripts/install-frontend.sh  # npm 고정 버전 설치
+VITE_DATA_MODE=listing-api VITE_API_BASE_URL=/api npm run dev
+```
+
+`listing-api`는 **매물만 MySQL**에 저장합니다. 후기·방문 기록은 브라우저에 남고, 기존 가상 매물은 이 모드에서 실제 DB 매물과 섞이지 않습니다. 기존 `local`과 전체 API 계약용 `api` 모드는 유지됩니다. 프론트엔드 개발 서버는 `/api`를 로컬 백엔드 8080 포트에 전달합니다. 로그인과 소유권 검증은 아직 없으므로 로컬 개발에서만 사용하세요.
+
+```bash
+npm test && npm run build
+./scripts/build-backend.sh
+curl http://127.0.0.1:8080/api/listings
+docker compose down  # DB 데이터 볼륨 유지
+```
+
+금액은 원 단위 정수, 면적은 ㎡, 미입력은 `null`입니다. 광고 원문은 `original`에 보관하고 새 매물마다 별도 building ID를 발급합니다. `backend/src/main/resources/application.yml`의 JPA `ddl-auto=update`는 로컬 개발용입니다. 정식 운영 전에는 스키마 마이그레이션과 인증·소유권 검증이 필요합니다. 비밀번호가 담긴 `.env`와 빌드 산출물은 Git에서 제외합니다.
+
+## 10. SFR-002 광고 원본 등록 (로컬 개발)
+
+`listing-api` 모드의 매물 화면에 **광고 원본 등록** 영역이 있습니다. 글 또는 JPG·PNG 이미지(최대 10MB)를 입력하고 주소 힌트·동호수·출처 URL을 선택적으로 넣어 임시 저장할 수 있습니다. **원본 확정**은 상태를 `DRAFT`에서 `EXTRACTION_PENDING`으로 바꾸지만 OCR·AI를 실행하지는 않습니다. 기존 매물 등록과 광고 원본 등록은 아직 별도 흐름입니다. 예시 매물과 실제 DB 광고 원본을 섞어 표시하지 않습니다.
+
+광고 메타데이터는 MySQL `advertisements` 테이블에 저장하고, 원본 이미지는 공개 경로가 아닌 Docker `room_uploads` 볼륨에 보관합니다. `docker compose down`은 두 볼륨을 유지합니다. `down -v`는 저장 데이터를 지우므로 팀 데이터를 다루는 환경에서 사용하지 마세요. 등록 요청은 `Idempotency-Key`를 사용해 같은 요청을 재시도해도 원본을 하나만 남기며, 같은 키로 다른 내용을 보내면 409를 반환합니다. 자세한 필드와 응답은 [API_HANDOFF.md](./API_HANDOFF.md)에 있습니다.
+
+```bash
+./scripts/dev-up.sh
+VITE_DATA_MODE=listing-api VITE_API_BASE_URL=/api npm run dev
+npm test
+npm run build
+./scripts/build-backend.sh
+```
+
+현재 광고 조회·확정 API에는 로그인과 사용자별 접근 제어가 없습니다. 외부 공개나 실사용 광고 업로드에는 사용하지 말고, SFR-001 인증·소유권 검증을 연결한 뒤 사용하세요. SFR-003 담당자는 이 원본을 바탕으로 OCR·AI 추출 결과와 실패·재시도 상태를 추가하면 됩니다.
