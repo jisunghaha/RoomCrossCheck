@@ -20,6 +20,7 @@ export default function RoomCard({ room: r, onDetail }) {
           <span>비교 선택</span>
         </label>
         <AuditBadge room={r} />
+        <span className="badge muted">{r.source === "server" ? "DB 저장 매물" : "가상·브라우저 매물"}</span>
       </div>
       <div className="card-body">
         <div className="location">{r.address}</div>

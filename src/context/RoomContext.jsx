@@ -4,7 +4,7 @@ const RoomContext = createContext(null);
 export function RoomProvider({ children, repository: suppliedRepository }) {
   const [repository] = useState(() => suppliedRepository || createRepository());
   const [state, setState] = useState(() => repository.initialState());
-  const [loading, setLoading] = useState(repository.mode === "api");
+  const [loading, setLoading] = useState(repository.mode === "api" || repository.mode === "listing-api");
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
@@ -23,7 +23,7 @@ export function RoomProvider({ children, repository: suppliedRepository }) {
     }
   }
   useEffect(() => {
-    if (repository.mode === "api") reload();
+    if (repository.mode === "api" || repository.mode === "listing-api") reload();
     return () => { generation.current++; };
   }, [repository]);
   async function persist(action, args, update, message) {
