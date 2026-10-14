@@ -1802,3 +1802,11 @@ summary {
 }
 
 .data-operation-boundary { border: 0; margin: 0; padding: 0; min-width: 0; }
+
+.ad-drafts { margin-bottom: 2rem; padding: 1.5rem; }
+.ad-drafts form { display: grid; gap: 1rem; }
+.ad-drafts label { display: grid; gap: .4rem; }
+.ad-drafts textarea, .ad-drafts input { max-width: 100%; }
+.ad-draft-list { display: grid; gap: .75rem; margin-top: 1rem; }
+.ad-draft-list article { border: 1px solid #ddd; border-radius: .75rem; padding: 1rem; }
+.ad-draft-list .badge { margin-left: .75rem; }
