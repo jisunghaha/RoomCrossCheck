@@ -1,0 +1,7 @@
+/**
+ * 신고·관리자 처리 (SFR-013).
+ * 유스케이스·소유권·작업 순서·트랜잭션을 조정한다. 업무 판단은 domain에 위임하고 repository·client 인터페이스를 생성자로 주입받는다.
+ * 신고 대상·중복·상태·관리자 조치 이력을 관리한다. 숨김·복원을 해당 글·후기 기능의 유스케이스에 요청한다.
+ * <p>Implementation placeholder; no business API is implemented yet.</p>
+ */
+package com.roomcrosscheck.moderation.service;

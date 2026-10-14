@@ -6,3 +6,9 @@ dist/
 .env.*
 !.env.example
 coverage/
+target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/

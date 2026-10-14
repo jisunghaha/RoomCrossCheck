@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: roomcrosscheck-backend
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# MySQL, Redis and Google OAuth settings are added with their adapters.
+# Keep credentials in server environment variables, never in frontend VITE_* values.

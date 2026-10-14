@@ -1,0 +1,7 @@
+/**
+ * 건물별 후기·통계 (SFR-011, SFR-012).
+ * HTTP 요청의 진입점. 입력 형식을 검증하고 service에 위임한다. DB·외부 API 직접 접근과 업무 계산을 넣지 않는다.
+ * 건물에 연결한 8개 항목 평가와 공개 후기 통계를 관리한다. 미응답은 분모에서 제외하고 수정·삭제·숨김 시 캐시를 무효화한다.
+ * <p>Implementation placeholder; no business API is implemented yet.</p>
+ */
+package com.roomcrosscheck.review.controller;
