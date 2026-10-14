@@ -1,3 +1,4 @@
+import { createLocalRepository } from "../src/app/data/localRepository.js";
 import React from "react";
 import { test, expect } from "vitest";
 import { render, screen, within, waitFor } from "@testing-library/react";
@@ -8,7 +9,7 @@ import { STORAGE_KEY } from "../src/app/data/localStorage.js";
 function setup() {
   const user = userEvent.setup();
   const view = render(
-    <RoomProvider>
+    <RoomProvider repository={createLocalRepository()}>
       <App />
     </RoomProvider>,
   );
@@ -38,7 +39,7 @@ test("React registration, editing and reload preserve null and zero", async () =
   );
   unmount();
   render(
-    <RoomProvider>
+    <RoomProvider repository={createLocalRepository()}>
       <App />
     </RoomProvider>,
   );

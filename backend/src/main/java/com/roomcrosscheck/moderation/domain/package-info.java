@@ -2,6 +2,6 @@
  * 신고·관리자 처리 (SFR-013).
  * 엔티티·값 객체·업무 규칙. HTTP, Spring, JPA, Redis, 외부 API에 의존하지 않는다. 규칙에 필요한 정보를 가진 객체가 검증과 상태 변경을 담당한다.
  * 신고 대상·중복·상태·관리자 조치 이력을 관리한다. 숨김·복원을 해당 글·후기 기능의 유스케이스에 요청한다.
- * <p>Implementation placeholder; no business API is implemented yet.</p>
+ * <p>패키지의 책임을 설명하며 실제 구현 범위는 개발 문서를 참조한다.</p>
  */
 package com.roomcrosscheck.moderation.domain;

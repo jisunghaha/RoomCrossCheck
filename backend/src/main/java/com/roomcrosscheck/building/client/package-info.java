@@ -2,6 +2,6 @@
  * 건물 식별·공식 조회 (SFR-005).
  * 외부 서비스 접근 인터페이스와 구현. 공급자 응답을 내부 모델로 변환하고 제한 시간·연동 오류를 처리한다. 업무 판단은 domain에 위임한다.
  * 확정 주소·동·호수로 건물·층·전유부를 식별한다. 공식 원본·출처·조회 시각과 조회 상태를 보존한다.
- * <p>Implementation placeholder; no business API is implemented yet.</p>
+ * <p>패키지의 책임을 설명하며 실제 구현 범위는 개발 문서를 참조한다.</p>
  */
 package com.roomcrosscheck.building.client;

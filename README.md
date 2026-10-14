@@ -23,6 +23,17 @@ RoomCrossCheck/
 
 프론트엔드는 기존 화면과 local/API 저장 모드를 유지합니다. 백엔드는 시작 가능한 기본 골격과 기능별 패키지를 준비한 상태이며 업무 API, Google 로그인, MySQL·Redis, OCR·공공 API는 아직 구현하지 않았습니다. 빈 기능 폴더의 `README.md`와 `package-info.java`는 앞으로 구현할 위치와 책임을 설명합니다. 핵심 7개 테이블의 MySQL 스키마·ERD·생성 SQL은 작성했으며 실제 서버 적용과 Spring Boot 연결은 아직 하지 않았습니다.
 
+## 로컬 화면만 실행
+
+백엔드·DB 없이 React 예시 화면을 실행합니다.
+
+```powershell
+# 저장소 루트에서
+powershell -NoProfile -ExecutionPolicy Bypass -File .\frontend\run-local.ps1
+```
+
+주소는 **http://127.0.0.1:4173** 입니다. 입력은 각자의 브라우저에 저장하며 팀원과 공유하지 않습니다. 백엔드 업무 기능·DB 연결은 담당자가 이후 구현합니다. [로컬 실행 안내](docs/LOCAL_DEVELOPMENT.md)를 참조하세요.
+
 ## 프론트엔드 실행
 
 Node.js 22.12 이상에서 실행합니다.
@@ -56,6 +67,8 @@ mvn spring-boot:run
 
 ## 개발 문서
 
+- [로컬 화면 실행](docs/LOCAL_DEVELOPMENT.md)
+- [한국어 주석 작성 기준](docs/development/COMMENTS.md)
 - [전체 구조와 GRASP·객체지향 원칙](docs/architecture/ARCHITECTURE.md)
 - [계획서 요구사항별 개발 위치](docs/architecture/REQUIREMENTS.md)
 - [프론트엔드 개발 가이드](frontend/README.md)

@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
-// Node 25 exposes its own localStorage; use the browser implementation in tests.
+// Node의 기본 localStorage와 충돌하지 않도록 테스트에서는 브라우저 구현을 사용한다.
 const browserStorage = new JSDOM("", { url: "http://localhost" }).window
   .localStorage;
 Object.defineProperty(globalThis, "localStorage", {

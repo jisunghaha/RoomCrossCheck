@@ -1,9 +1,9 @@
--- RoomCrossCheck core schema: MySQL 8.4, 7 tables.
--- Draft migration, not yet applied. Run once in an empty selected database.
+-- MySQL 8.4용 핵심 7개 테이블이다.
+-- 실제 MySQL에는 아직 적용하지 않았다. 빈 DB에 한 번 적용한다.
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
--- 1. Google login and membership
+-- 회원과 Google 식별자
 CREATE TABLE users (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     google_id VARCHAR(255) COLLATE utf8mb4_bin NOT NULL UNIQUE,
@@ -14,7 +14,7 @@ CREATE TABLE users (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 2. Shared building identity; public reviews belong to this table.
+-- 공개 후기는 개인 매물이 아닌 건물에 연결한다.
 CREATE TABLE buildings (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     official_key VARCHAR(100) COLLATE utf8mb4_bin UNIQUE,
@@ -24,7 +24,7 @@ CREATE TABLE buildings (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 3. Private room + advertisement text + user-confirmed values
+-- 개인 매물의 광고 원문과 사용자 확정값
 CREATE TABLE rooms (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE rooms (
     CONSTRAINT ck_rooms_area CHECK (area IS NULL OR area >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 4. Several visits per private room
+-- 한 매물에 여러 방문 기록을 저장할 수 있다.
 CREATE TABLE visits (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     room_id BIGINT UNSIGNED NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE visits (
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 5. Stable item identity, including user-added items; no template table.
+-- 체크 항목은 표시 순서와 별개인 고유 키로 구분한다.
 CREATE TABLE visit_check_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     visit_id BIGINT UNSIGNED NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE visit_check_items (
     CONSTRAINT ck_visit_item_checked CHECK (checked IN (0, 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 6. Public building reviews, independent of private rooms
+-- 매물을 삭제해도 건물별 공개 후기는 유지한다.
 CREATE TABLE reviews (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE reviews (
     FOREIGN KEY (building_id) REFERENCES buildings(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 7. One score per review/category; NULL means unanswered/not applicable.
+-- 같은 후기·항목은 한 번만 저장하며 미응답은 NULL이다.
 CREATE TABLE review_scores (
     review_id BIGINT UNSIGNED NOT NULL,
     category VARCHAR(20) NOT NULL,

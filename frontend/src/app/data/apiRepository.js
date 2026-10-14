@@ -19,7 +19,7 @@ function visit(value) {
   return value;
 }
 
-// Backend adapter: IDs, ownership and timestamps are assigned by the server.
+// 서버 연동 시 ID·소유자·생성 시각은 서버 응답을 사용한다.
 export function createApiRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
   async function request(path, method = "GET", body) {
     const controller = new AbortController();

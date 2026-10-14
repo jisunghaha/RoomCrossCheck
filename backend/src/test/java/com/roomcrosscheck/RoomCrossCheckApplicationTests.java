@@ -7,6 +7,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 class RoomCrossCheckApplicationTests {
     @Test
     void contextLoadsWithoutExternalServices() {
-        // The package skeleton must start before MySQL, Redis and OAuth are integrated.
+        // 기본 프로필은 외부 DB·인증 서비스를 연결하지 않아도 시작할 수 있어야 한다.
     }
 }

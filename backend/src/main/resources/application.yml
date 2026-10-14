@@ -5,5 +5,5 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
-# MySQL, Redis and Google OAuth settings are added with their adapters.
-# Keep credentials in server environment variables, never in frontend VITE_* values.
+# MySQL 연결 설정은 담당 기능 구현 시 추가한다.
+# 실제 MySQL·Google 인증의 비밀값은 서버 환경변수로 관리한다.

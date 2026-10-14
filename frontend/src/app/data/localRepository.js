@@ -3,7 +3,7 @@ import { loadState, STORAGE_KEY } from "./localStorage.js";
 export function createLocalRepository(storage = window.localStorage) {
   let state = loadState(storage);
   function commit(next, result) {
-    // Only report success after durable browser storage succeeds.
+    // 브라우저 저장이 완료된 뒤에만 성공으로 처리한다.
     try { storage.setItem(STORAGE_KEY, JSON.stringify(next)); }
     catch { throw new Error("브라우저에 저장하지 못했어요. 저장 공간과 브라우저 설정을 확인해 주세요."); }
     state = next;

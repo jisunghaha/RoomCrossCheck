@@ -4,6 +4,10 @@
 
 **이 폴더는 React 프론트엔드입니다.** 백엔드 기본 구조는 `../backend/`에 있으며 실제 업무 API와 MySQL 연결은 앞으로 구현합니다. 화면의 기본 흐름을 출발점으로 삼고, 계획서의 요구사항에 맞춰 기능과 API를 확장합니다.
 
+## 로컬 화면 실행
+
+백엔드 없이 화면을 확인하려면 저장소 루트에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\frontend\run-local.ps1`을 실행합니다. 예시 데이터와 브라우저 저장을 사용하며 자세한 내용은 [실행 안내](../docs/LOCAL_DEVELOPMENT.md)를 참조합니다.
+
 ## 1. 개발 시작하기
 
 Node.js 22.12 이상을 준비하고 `frontend/` 폴더에서 실행합니다.

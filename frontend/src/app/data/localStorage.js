@@ -1,5 +1,5 @@
 import { seedRooms, seedReviews } from "./seed.js";
-// Preserve the original prototype's key so existing browser records survive migration.
+// 기존 저장 키를 유지하여 사용자의 브라우저 기록을 보존한다.
 export const STORAGE_KEY = "oneroom.frontend.v1";
 export function initialState() {
   return {
@@ -22,7 +22,7 @@ export function loadState(storage = window.localStorage) {
     )
       return { ...value, visits: value.visits || {} };
   } catch {
-    /* Unavailable or invalid browser storage falls back to the demo. */
+    /* 저장값을 읽을 수 없으면 브라우저 모드의 초기 예시를 사용한다. */
   }
   return initialState();
 }
