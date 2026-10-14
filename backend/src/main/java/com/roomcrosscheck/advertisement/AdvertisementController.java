@@ -9,7 +9,11 @@ import java.util.List;
 @RequestMapping("/api/advertisements")
 public class AdvertisementController {
     private final AdvertisementService service;
-    public AdvertisementController(AdvertisementService service) { this.service = service; }
+    private final ExtractionService extraction;
+    public AdvertisementController(AdvertisementService service, ExtractionService extraction) {
+        this.service = service;
+        this.extraction = extraction;
+    }
 
     @GetMapping public List<AdvertisementResponse> all() { return service.all(); }
     @GetMapping("/{id}") public AdvertisementResponse one(@PathVariable String id) { return service.one(id); }
@@ -25,4 +29,12 @@ public class AdvertisementController {
     }
     @PostMapping("/{id}/confirm")
     public AdvertisementResponse confirm(@PathVariable String id) { return service.confirm(id); }
+
+    @PostMapping("/{id}/extract")
+    public AdvertisementResponse extract(@PathVariable String id) { return extraction.extract(id); }
+
+    @PutMapping("/{id}/extraction")
+    public AdvertisementResponse review(@PathVariable String id, @RequestBody ExtractionResult result) {
+        return extraction.review(id, result);
+    }
 }

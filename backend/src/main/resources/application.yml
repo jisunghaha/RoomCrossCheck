@@ -13,5 +13,9 @@ spring:
       max-request-size: 11MB
 ads:
   storage-dir: ${AD_STORAGE_DIR:/tmp/roomcrosscheck-ads}
+gemini:
+  enabled: ${GEMINI_ENABLED:false}
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
 server:
   address: 0.0.0.0
