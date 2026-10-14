@@ -130,7 +130,9 @@ export default function App() {
               <div className="notice">
                 {dataMode === "local"
                   ? "현재 데이터는 이 브라우저에 저장됩니다. 로그인·OCR·공공 API는 아직 연결되지 않았습니다."
-                  : "데이터는 연결된 서버를 통해 저장됩니다. 로그인·OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
+                  : dataMode === "listing-api"
+                    ? "매물은 MySQL에 저장됩니다. 후기·방문 기록은 이 브라우저에만 저장되고 로그인·OCR·공공 API는 아직 연결되지 않았습니다."
+                    : "데이터는 연결된 서버를 통해 저장됩니다. 로그인·OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
               </div>
             </>
           )}

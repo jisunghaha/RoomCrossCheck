@@ -72,3 +72,7 @@ users, buildings, rooms(user_id/building_id), visits(room_id), reviews(user_id/b
 `npm test`: 기존 사용자 흐름과 계산, API 요청/응답·401 실패, 로컬 저장 실패, 서버 저장 실패 시 입력 보존, 초기 조회 재시도를 검증합니다.
 `npm run build`: 배포 빌드를 검증합니다.
 실제 Spring Boot/MySQL 연결, 인증, CORS·CSRF 설정, 실서버 동시성 검증은 서버 구현 후 수행해야 합니다.
+
+## 현재 구현된 로컬 개발 연결
+
+`VITE_DATA_MODE=listing-api`에서 React는 `GET/POST /api/listings`, `PATCH/DELETE /api/listings/{id}`를 사용합니다. Spring Boot와 MySQL에 매물만 저장하고 후기·방문 기록은 브라우저에 남습니다. 위 `/rooms`, `/reviews`, `/visits` 전체 계약과 인증·권한은 후속 구현 범위입니다. 이 부분 구현을 전체 API 모드 완료로 해석하지 마세요.

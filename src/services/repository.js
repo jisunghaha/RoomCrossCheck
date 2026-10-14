@@ -109,9 +109,50 @@ export function createLocalRepository(storage = window.localStorage) {
   };
 }
 
+// Local-development bridge: only listings use MySQL; reviews and visits remain browser data.
+export function createListingRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, storage = window.localStorage } = {}) {
+  const local = createLocalRepository(storage);
+  const url = `${baseUrl.replace(/\/$/, "")}/listings`;
+  const asRoom = value => ({ ...value, tags: ["직접 등록"], theme: "sage", official: null, source: "server" });
+  async function request(path = "", method = "GET", body) {
+    let response;
+    try {
+      response = await fetchImpl(`${url}${path}`, {
+        method, credentials: "include",
+        headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      });
+    } catch { throw new Error("매물 서버에 연결하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요."); }
+    if (!response.ok) throw new Error(`매물 서버 요청에 실패했어요. (${response.status})`);
+    return response.status === 204 ? undefined : response.json();
+  }
+  return {
+    mode: "listing-api",
+    initialState: () => ({ rooms: [], reviews: local.initialState().reviews, visits: local.initialState().visits }),
+    async load() {
+      const rooms = await request();
+      if (!Array.isArray(rooms)) throw invalidResponse();
+      const browser = await local.load();
+      return { rooms: rooms.map(value => asRoom(room({ ...value, tags: [] }))), reviews: browser.reviews, visits: browser.visits };
+    },
+    async saveRoom(values, id) {
+      const payload = Object.fromEntries(["name", "address", "deposit", "rent", "fee", "area", "areaType", "floor", "original"].map(key => [key, values[key] ?? null]));
+      return asRoom(room({ ...await request(id ? `/${encodeURIComponent(id)}` : "", id ? "PATCH" : "POST", payload), tags: [] }));
+    },
+    async deleteRoom(id) {
+      await request(`/${encodeURIComponent(id)}`, "DELETE");
+      await local.deleteRoom(id);
+    },
+    addReview: values => local.addReview(values),
+    deleteReview: id => local.deleteReview(id),
+    saveVisit: (id, value) => local.saveVisit(id, value),
+  };
+}
+
 export function createRepository() {
   const mode = import.meta.env.VITE_DATA_MODE || "local";
   if (mode === "api") return createApiRepository({ baseUrl: import.meta.env.VITE_API_BASE_URL || "/api" });
-  if (mode !== "local") throw new Error("VITE_DATA_MODE must be local or api");
+  if (mode === "listing-api") return createListingRepository({ baseUrl: import.meta.env.VITE_API_BASE_URL || "/api" });
+  if (mode !== "local") throw new Error("VITE_DATA_MODE must be local, listing-api or api");
   return createLocalRepository();
 }

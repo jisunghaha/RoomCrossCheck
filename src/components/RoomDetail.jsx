@@ -25,7 +25,7 @@ export default function RoomDetail({ room: r, onEdit, onDelete, onVisit }) {
         </div>
       </div>
       <h3>
-        광고 · 공식정보 대조 <span className="badge muted">가상 데이터</span>
+        광고 · 공식정보 대조 <span className="badge muted">{r.official ? "가상 공식정보" : "공식 조회 미실시"}</span>
       </h3>
       {a.count ? (
         <p className="helper">

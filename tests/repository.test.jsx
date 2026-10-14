@@ -50,3 +50,18 @@ test("API initial load can recover by retry without displaying demo", async () =
   expect(await screen.findByRole("button", { name: "새 매물 등록" })).toBeInTheDocument();
   expect(screen.queryByText("햇살이 머무는 첫 자취방")).not.toBeInTheDocument();
 });
+
+test("listing bridge loads only DB rooms and saves through listings API", async () => {
+  const { createListingRepository } = await import("../src/services/repository.js");
+  const saved = { id: "db-1", building: "building-1", name: "DB 방", address: "주소", createdAt: "2026-10-14" };
+  const fetchImpl = vi.fn().mockResolvedValueOnce({ ok: true, status: 200, json: async () => [saved] })
+    .mockResolvedValueOnce({ ok: true, status: 201, json: async () => saved });
+  const repo = createListingRepository({ fetchImpl });
+  const loaded = await repo.load();
+  expect(loaded.rooms).toHaveLength(1);
+  expect(loaded.rooms[0]).toMatchObject({ id: "db-1", source: "server", official: null });
+  expect(loaded.reviews.length).toBeGreaterThan(0);
+  await repo.saveRoom({ name: "DB 방", address: "주소", fee: null });
+  expect(fetchImpl.mock.calls[1][0]).toBe("/api/listings");
+  expect(fetchImpl.mock.calls[1][1]).toMatchObject({ method: "POST" });
+});
