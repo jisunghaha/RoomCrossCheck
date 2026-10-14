@@ -1,0 +1,7 @@
+/**
+ * 건물 식별·공식 조회 (SFR-005).
+ * 엔티티·값 객체·업무 규칙. HTTP, Spring, JPA, Redis, 외부 API에 의존하지 않는다. 규칙에 필요한 정보를 가진 객체가 검증과 상태 변경을 담당한다.
+ * 확정 주소·동·호수로 건물·층·전유부를 식별한다. 공식 원본·출처·조회 시각과 조회 상태를 보존한다.
+ * <p>Implementation placeholder; no business API is implemented yet.</p>
+ */
+package com.roomcrosscheck.building.domain;

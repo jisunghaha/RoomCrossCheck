@@ -1,0 +1,7 @@
+/**
+ * 게시글·댓글·반응 (SFR-010).
+ * 엔티티·값 객체·업무 규칙. HTTP, Spring, JPA, Redis, 외부 API에 의존하지 않는다. 규칙에 필요한 정보를 가진 객체가 검증과 상태 변경을 담당한다.
+ * 공지·자취 정보와 게시글·후기 대상 댓글·반응을 관리한다. 작성자·관리자 권한과 사용자별 반응 중복을 검증한다.
+ * <p>Implementation placeholder; no business API is implemented yet.</p>
+ */
+package com.roomcrosscheck.community.domain;
