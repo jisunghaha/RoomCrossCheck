@@ -1810,3 +1810,4 @@ summary {
 .ad-draft-list { display: grid; gap: .75rem; margin-top: 1rem; }
 .ad-draft-list article { border: 1px solid #ddd; border-radius: .75rem; padding: 1rem; }
 .ad-draft-list .badge { margin-left: .75rem; }
+.ad-review { margin-top: 1rem; border-top: 1px solid #ddd; padding-top: 1rem; }

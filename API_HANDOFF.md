@@ -93,3 +93,16 @@ multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최�
 응답 필드: `id`, `status`(`DRAFT` 또는 `EXTRACTION_PENDING`), `originalText`, `addressHint`, `unitLabel`, `sourceUrl`, `imageName`, `imageContentType`, `imageSize`, `createdAt`, `confirmedAt`. 저장소 내부 경로와 파일 키는 응답에 포함하지 않습니다. `confirm` 재호출은 같은 확정 상태를 반환하며 현재는 작업 큐에 넣거나 OCR을 실행하지 않습니다. 등록·확정은 SFR-003의 입력 단계이고 기존 `/api/listings`와 자동 연결되지 않습니다.
 
 이 API는 로컬 개발 전용이며 현재 모든 광고 원본을 조회할 수 있습니다. SFR-001 인증 완료 시 생성자 소유권, 조회·확정 권한, 이미지 접근 정책을 서버에서 추가해야 합니다. 운영 환경에서는 스키마 마이그레이션과 동시 요청 멱등성 검증도 필요합니다.
+
+## SFR-003 Gemini 추출 API (현재 구현)
+
+| 메서드 | 경로 | 요청 | 성공 응답 |
+|---|---|---|---|
+| POST | `/api/advertisements/{id}/extract` | 없음 | 200, `EXTRACTION_READY` 광고 |
+| PUT | `/api/advertisements/{id}/extraction` | 아래 JSON | 200, `REVIEWED` 광고 |
+
+추출은 `DRAFT`에서 요청하면 409입니다. `EXTRACTION_PENDING` 또는 `EXTRACTION_FAILED`에서 명시적으로 호출하며, 같은 광고의 중복 진행 요청은 409입니다. 이미 `EXTRACTION_READY`면 저장된 결과를 돌려주고 API를 다시 호출하지 않습니다. 키가 비어 있거나 `GEMINI_ENABLED=false`면 503으로 거부하며 상태를 바꾸지 않습니다. Gemini 한도 초과는 429, 그 밖의 원격 응답·파싱 실패는 502로 표시하고 `EXTRACTION_FAILED`로 저장합니다. 재시도는 다시 `extract`를 호출합니다.
+
+추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null)입니다. 확인 요청은 이 일곱 필드를 JSON 본문에 담습니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
+
+Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 `gemini-2.5-flash`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 모델별 무료 한도와 계정 조건은 실제 사용 전 확인해야 합니다. 현재 로그인·소유권 검증이 없어 이 API도 로컬 개발 전용입니다. 실제 Gemini 서비스와의 통합은 키 없이 테스트할 수 없어, 로컬 가짜 서버·서비스 테스트로 요청 형식과 결과 저장을 검증했습니다.
