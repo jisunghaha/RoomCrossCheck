@@ -4,7 +4,7 @@ import { audit } from "../lib/domain.js";
 import { Icon, PageHeading } from "../components/UI.jsx";
 import RoomCard from "../components/RoomCard.jsx";
 import AdDraftPanel from "../components/AdDraftPanel.jsx";
-export default function RoomsPage({ onAdd, onDetail, navigate }) {
+export default function RoomsPage({ onAdd, onRegisterAdvertisement, onDetail, navigate }) {
   const { rooms, selected, clearSelected, dataMode } = useRooms();
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all"),
@@ -38,7 +38,7 @@ export default function RoomsPage({ onAdd, onDetail, navigate }) {
           <Icon name="plus" />새 매물 등록
         </button>
       </PageHeading>
-      {dataMode === "listing-api" && <AdDraftPanel />}
+      {dataMode === "listing-api" && <AdDraftPanel onRegister={onRegisterAdvertisement} />}
       <section className="overview">
         {[
           ["home", "", "저장한 매물", rooms.length],

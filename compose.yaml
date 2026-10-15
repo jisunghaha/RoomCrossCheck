@@ -15,13 +15,15 @@ services:
       retries: 20
   backend:
     build: ./backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - room_uploads:/data/advertisements
     environment:
       AD_STORAGE_DIR: /data/advertisements
       GEMINI_ENABLED: ${GEMINI_ENABLED:-false}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
       DB_URL: jdbc:mysql://db:3306/roomcrosscheck
       DB_USER: room_app
@@ -30,7 +32,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${ROOM_BACKEND_PORT:-8080}:8080"
 volumes:
   room_mysql:
   room_uploads:

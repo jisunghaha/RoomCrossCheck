@@ -39,7 +39,7 @@ public class GeminiExtractionProvider implements ExtractionProvider {
     @Autowired
     public GeminiExtractionProvider(ObjectMapper mapper,
             @Value("${gemini.api-key:}") String apiKey,
-            @Value("${gemini.model:gemini-2.5-flash}") String model,
+            @Value("${gemini.model:gemini-3.5-flash-lite}") String model,
             @Value("${gemini.base-url:https://generativelanguage.googleapis.com/v1beta}") String baseUrl,
             @Value("${gemini.enabled:false}") boolean enabled) {
         this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(),

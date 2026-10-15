@@ -11,6 +11,6 @@ public record ListingRequest(
     @PositiveOrZero Long fee,
     @DecimalMin("0.0") BigDecimal area,
     @Pattern(regexp = "전용|공급|미상") String areaType,
-    @Min(-10) @Max(200) Integer floor,
-    @Size(max = 3000) String original
+    @Min(-20) @Max(200) Integer floor,
+    @Size(max = 10000) String original
 ) {}

@@ -8,3 +8,5 @@ dist/
 coverage/
 backend/target/
 backend/.mvn-cache/
+.runtime/
+__pycache__/

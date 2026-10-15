@@ -21,4 +21,5 @@ p.write_text('\n'.join(lines) + '\n')
 p.chmod(0o600)
 PYENV
 ./scripts/build-backend.sh
-DOCKER_CONFIG=${DOCKER_CONFIG:-/tmp/room-docker-config} docker compose up --build -d
+python scripts/prepare-java-runtime.py
+docker compose -f compose.yaml -f .runtime/compose.java-runtime.json up --build -d

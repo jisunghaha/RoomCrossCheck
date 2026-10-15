@@ -29,6 +29,7 @@ export default function App() {
         {page === "rooms" && (
           <RoomsPage
             onAdd={() => setModal({ type: "form" })}
+            onRegisterAdvertisement={(initialValues, advertisementId) => setModal({ type: "form", initialValues, advertisementId })}
             onDetail={(id) => setModal({ type: "detail", id })}
             navigate={navigate}
           />
@@ -43,7 +44,7 @@ export default function App() {
       </Layout>
       {modal && (
         <Modal
-          key={`${modal.type}-${modal.id || ""}`}
+          key={`${modal.type}-${modal.id || modal.advertisementId || ""}`}
           title={
             {
               guide: "이용 가이드",
@@ -58,6 +59,7 @@ export default function App() {
           {modal.type === "form" && (
             <RoomForm
               room={room}
+              initialValues={modal.initialValues}
               onCancel={close}
               onDone={() => {
                 close();
@@ -131,7 +133,7 @@ export default function App() {
                 {dataMode === "local"
                   ? "현재 데이터는 이 브라우저에 저장됩니다. 로그인·OCR·공공 API는 아직 연결되지 않았습니다."
                   : dataMode === "listing-api"
-                    ? "매물은 MySQL에 저장됩니다. 후기·방문 기록은 이 브라우저에만 저장되고 로그인·OCR·공공 API는 아직 연결되지 않았습니다."
+                    ? "매물은 MySQL에 저장됩니다. 광고 추출은 사용자 확인 후 매물 입력에 활용합니다. 후기·방문 기록은 이 브라우저에만 저장되고 로그인·공공 API는 아직 연결되지 않았습니다."
                     : "데이터는 연결된 서버를 통해 저장됩니다. 로그인·OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
               </div>
             </>

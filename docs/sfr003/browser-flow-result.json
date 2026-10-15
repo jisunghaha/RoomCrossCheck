@@ -1,0 +1,16 @@
+{
+  "scope": "Chromium UI -> Vite proxy -> normal Compose Spring Boot -> local extraction stub -> real MySQL",
+  "externalGeminiGenerationCalls": 0,
+  "browser": "Chromium",
+  "allTransitionsPassed": true,
+  "reviewedAndListingCorrectionsPersisted": true,
+  "nullZeroBasementPreserved": true,
+  "officialInformationNotInjected": true,
+  "listingReloadPassed": true,
+  "pageErrors": 0,
+  "screenshot": "/workspace/RoomCrossCheck/.runtime/sfr003-browser-flow.png",
+  "normalComposeProxyAndCaApplied": true,
+  "proxyTlsProbeHttpStatus": 403,
+  "proxyTlsProbeScope": "unauthenticated read-only model metadata; no generation",
+  "stubCalls": 1
+}

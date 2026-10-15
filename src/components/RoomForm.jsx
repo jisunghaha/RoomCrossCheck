@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { useRooms } from "../context/RoomContext.jsx";
 import { Field } from "./UI.jsx";
-export default function RoomForm({ room, onDone, onCancel }) {
+export default function RoomForm({ room, initialValues, onDone, onCancel }) {
   const { saveRoom } = useRooms();
+  const initial = room || initialValues;
   const [values, setValues] = useState(() => ({
-    name: room?.name || "",
-    address: room?.address || "",
-    deposit: room?.deposit == null ? "" : room.deposit / 10000,
-    rent: room?.rent == null ? "" : room.rent / 10000,
-    fee: room?.fee == null ? "" : room.fee / 10000,
-    area: room?.area ?? "",
-    areaType: room?.areaType || "미상",
-    floor: room?.floor ?? "",
-    original: room?.original || "",
+    name: initial?.name || "",
+    address: initial?.address || "",
+    deposit: initial?.deposit == null ? "" : initial.deposit / 10000,
+    rent: initial?.rent == null ? "" : initial.rent / 10000,
+    fee: initial?.fee == null ? "" : initial.fee / 10000,
+    area: initial?.area ?? "",
+    areaType: initial?.areaType || "미상",
+    floor: initial?.floor ?? "",
+    original: initial?.original || "",
   }));
   const [error, setError] = useState("");
   const bind = (key) => ({
@@ -33,9 +34,9 @@ export default function RoomForm({ room, onDone, onCancel }) {
         ...values,
         name: values.name.trim(),
         address: values.address.trim(),
-        deposit: number("deposit", 10000),
-        rent: number("rent", 10000),
-        fee: number("fee", 10000),
+        deposit: values.deposit === "" ? null : Math.round(number("deposit", 10000)),
+        rent: values.rent === "" ? null : Math.round(number("rent", 10000)),
+        fee: values.fee === "" ? null : Math.round(number("fee", 10000)),
         area: number("area"),
         floor: number("floor"),
       },
@@ -47,8 +48,10 @@ export default function RoomForm({ room, onDone, onCancel }) {
     <>
       <h2>{room ? "매물 정보 수정" : "새로운 방을 저장하세요"}</h2>
       <p className="helper">
-        직접 확인한 광고 정보를 입력하세요. OCR·공식정보 조회는 백엔드 연결 후
-        사용할 수 있습니다.
+        {initialValues
+          ? "사용자가 확인한 광고 값입니다. 이름과 누락된 주소를 입력하고, 값을 수정한 뒤 저장하세요."
+          : "직접 확인한 광고 정보를 입력하세요."}
+        {" "}광고 값은 건축물대장 공식 정보가 아닙니다. 공식 정보는 별도로 조회·대조해야 합니다.
       </p>
       <form onSubmit={submit}>
         <Field label="매물 이름 *">
@@ -79,8 +82,8 @@ export default function RoomForm({ room, onDone, onCancel }) {
                 {...bind(key)}
                 type="number"
                 min="0"
-                max="1000000"
-                step="0.01"
+                max={key === "area" ? "100000" : "100000000"}
+                step={key === "area" ? "0.01" : "0.0001"}
                 placeholder="미상은 비워두세요"
               />
             </Field>
@@ -96,7 +99,7 @@ export default function RoomForm({ room, onDone, onCancel }) {
             <input
               {...bind("floor")}
               type="number"
-              min="-10"
+              min="-20"
               max="200"
               step="1"
               placeholder="미상은 비워두세요"
@@ -107,7 +110,7 @@ export default function RoomForm({ room, onDone, onCancel }) {
           <textarea
             {...bind("original")}
             rows="3"
-            maxLength="3000"
+            maxLength="10000"
             placeholder="광고 내용을 그대로 보관해 보세요."
           />
         </Field>

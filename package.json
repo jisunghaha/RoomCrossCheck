@@ -10,7 +10,10 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:runtime": "python tests/java-runtime.test.py && python tests/evaluation-readiness.test.py",
+    "test:browser": "python scripts/verify-sfr003-browser.py",
+    "evaluation:check": "python scripts/check-sfr003-evaluation.py"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -23,6 +26,7 @@
     "jsdom": "^27.0.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@testing-library/jest-dom": "^6.9.1"
+    "@testing-library/jest-dom": "^6.9.1",
+    "playwright-core": "^1.64.1"
   }
 }
