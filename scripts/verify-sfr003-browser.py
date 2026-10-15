@@ -107,8 +107,8 @@ public class RoomProxyProbe {
                  b"-Dhttp.nonProxyHosts=", b"-Djavax.net.ssl.trustStore=", b"-Djavax.net.ssl.trustStorePassword="))]
         probe_status = int(subprocess.check_output(["docker", "--host=unix:///var/run/docker.sock", "exec", container,
                           "java", *flags, "-cp", "/tmp", "RoomProxyProbe"], env=env, text=True).strip())
-        frontend = subprocess.Popen(["node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", str(vite_port), "--strictPort"],
-                                    cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        frontend = subprocess.Popen(["node", str(ROOT / "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", str(vite_port), "--strictPort"],
+                                    cwd=ROOT / "frontend", env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(30):
             try:
                 with opener.open(env["SFR_BROWSER_URL"], timeout=2):
