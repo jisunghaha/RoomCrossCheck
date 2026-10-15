@@ -8,6 +8,8 @@
   "officialInformationNotInjected": true,
   "listingReloadPassed": true,
   "pageErrors": 0,
+  "registrationRoute": "#register",
+  "noListingBeforeFinalConfirmation": true,
   "screenshot": "/workspace/RoomCrossCheck/.runtime/sfr003-browser-flow.png",
   "normalComposeProxyAndCaApplied": true,
   "proxyTlsProbeHttpStatus": 403,

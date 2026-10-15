@@ -20,11 +20,11 @@ PY
 fi
 if [[ -n ${HTTPS_PROXY:-} && -n ${CODEX_PROXY_CERT:-} && -f ${CODEX_PROXY_CERT:-} ]]; then
   mounts+=(-v "$CODEX_PROXY_CERT:/tmp/proxy.crt:ro")
-  docker run --rm --network host -u "$(id -u):$(id -g)" "${mounts[@]}" -w /app maven:3.9-eclipse-temurin-21 sh -c 'cp "$JAVA_HOME/lib/security/cacerts" /tmp/room-cacerts && keytool -importcert -noprompt -alias room-cloud-proxy -file /tmp/proxy.crt -keystore /tmp/room-cacerts -storepass changeit >/dev/null && MAVEN_OPTS="-Djavax.net.ssl.trustStore=/tmp/room-cacerts -Djavax.net.ssl.trustStorePassword=changeit" mvn -B -Dmaven.repo.local=/app/.mvn-cache -s /tmp/maven-settings.xml test package'
+  docker run --rm --network host -u "$(id -u):$(id -g)" "${mounts[@]}" -w /app maven:3.9-eclipse-temurin-21 sh -c 'cp "$JAVA_HOME/lib/security/cacerts" /tmp/room-cacerts && keytool -importcert -noprompt -alias room-cloud-proxy -file /tmp/proxy.crt -keystore /tmp/room-cacerts -storepass changeit >/dev/null && MAVEN_OPTS="-Djavax.net.ssl.trustStore=/tmp/room-cacerts -Djavax.net.ssl.trustStorePassword=changeit" mvn -B -Dmaven.repo.local=/app/.mvn-cache -s /tmp/maven-settings.xml clean test package'
 else
   if [[ -n ${HTTPS_PROXY:-} ]]; then
-    docker run --rm --network host -u "$(id -u):$(id -g)" "${mounts[@]}" -w /app maven:3.9-eclipse-temurin-21 mvn -B -Dmaven.repo.local=/app/.mvn-cache -s /tmp/maven-settings.xml test package
+    docker run --rm --network host -u "$(id -u):$(id -g)" "${mounts[@]}" -w /app maven:3.9-eclipse-temurin-21 mvn -B -Dmaven.repo.local=/app/.mvn-cache -s /tmp/maven-settings.xml clean test package
   else
-    docker run --rm --network host -u "$(id -u):$(id -g)" "${mounts[@]}" -w /app maven:3.9-eclipse-temurin-21 mvn -B -Dmaven.repo.local=/app/.mvn-cache test package
+    docker run --rm --network host -u "$(id -u):$(id -g)" "${mounts[@]}" -w /app maven:3.9-eclipse-temurin-21 mvn -B -Dmaven.repo.local=/app/.mvn-cache clean test package
   fi
 fi
