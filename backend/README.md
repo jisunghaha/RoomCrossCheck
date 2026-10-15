@@ -13,7 +13,7 @@ mvn package
 mvn spring-boot:run
 ```
 
-포트는 기본 8080이며 `SERVER_PORT` 환경변수로 바꿀 수 있다. `RoomCrossCheckApplicationTests`는 외부 서비스 없이 Spring context가 시작되는지 검증한다.
+VS Code에서 `RoomCrossCheckApplication.java`의 main을 실행해도 된다. 주소는 `127.0.0.1:8080`이며 `SERVER_PORT` 환경변수로 포트를 바꿀 수 있다. `RoomCrossCheckApplicationTests`는 외부 서비스 없이 Spring context가 시작되는지 검증한다. 공개 업무 경로는 아직 없으므로 브라우저의 접근 거부 응답은 서버 시작 실패를 뜻하지 않는다.
 
 ## 구현 위치
 
@@ -39,7 +39,7 @@ Domain 객체가 자기 데이터의 유효성·상태 전이를 검증한다. S
 
 ## 설정과 외부 연동
 
-기본 골격에는 웹·입력 검증·보안·테스트 의존성만 추가했다. MySQL 연결 시 JPA/MySQL 드라이버와 버전 관리된 migration을, Redis 연결 시 Redis/Cache를, Google 로그인 연결 시 OAuth2 client를 필요한 기능과 함께 추가한다. DB migration 폴더에는 핵심 7개 테이블의 V1 생성 SQL이 있으며 실제 서버에 적용하거나 앱에 자동 migration을 연결하지는 않았다.
+기본 서버 의존성은 웹·입력 검증·보안·테스트다. Maven의 `db` 프로필에만 Flyway와 MySQL 드라이버를 두어 스키마를 별도 명령으로 관리한다. `mvn -Pdb flyway:migrate` 사용법은 [DB 안내](../docs/database/README.md)를 참조한다. 일반 앱 실행은 DB에 접속하지 않는다. JPA·로그인·Redis 등 업무 의존성은 해당 기능 개발 시 추가한다.
 
 `SecurityConfiguration`은 모든 요청을 거부하고 CSRF 기본 보호를 유지한다. SFR-001 구현 시 공지·공개 게시글·공개 후기 열람 경로를 허용하고 개인 자료 API는 인증·소유권을 검증한다. 관리자 기능은 별도 역할을 확인한다. 세션·CORS·CSRF 계약을 프론트와 합의한다.
 
@@ -51,4 +51,4 @@ DB·Redis·Google·외부 API 비밀키는 서버 환경변수로 읽는다. `.e
 
 ## 데이터베이스 설계
 
-[MySQL 설계 안내](../docs/database/README.md)에 ERD·데이터 사전·생성 순서가 있다. 실제 DB·Flyway·JPA 연결 전에는 기존 외부 서비스 없는 시작 테스트를 유지한다. SQL 자체를 검증할 때는 별도 테스트 DB에 V1을 적용하고 `src/test/resources/db/verify_schema.sql`을 실행한다. 이 SQL 검증은 Maven 시작 테스트에서 자동 실행되지 않는다.
+[MySQL 설계 안내](../docs/database/README.md)에 ERD·데이터 사전·Flyway 적용 순서가 있다. 기존 외부 서비스 없는 시작 테스트는 유지한다. SQL 자체를 검증할 때는 별도 테스트 DB에 Flyway로 V1을 적용하고 `src/test/resources/db/verify_schema.sql`을 실행한다. 이 SQL 검증은 Maven 시작 테스트에서 자동 실행되지 않는다.

@@ -21,15 +21,16 @@ RoomCrossCheck/
     └── database/             # MySQL ERD·데이터 사전·생성 안내
 ```
 
-프론트엔드는 기존 화면과 local/API 저장 모드를 유지합니다. 백엔드는 시작 가능한 기본 골격과 기능별 패키지를 준비한 상태이며 업무 API, Google 로그인, MySQL·Redis, OCR·공공 API는 아직 구현하지 않았습니다. 빈 기능 폴더의 `README.md`와 `package-info.java`는 앞으로 구현할 위치와 책임을 설명합니다. 핵심 7개 테이블의 MySQL 스키마·ERD·생성 SQL은 작성했으며 실제 서버 적용과 Spring Boot 연결은 아직 하지 않았습니다.
+프론트엔드는 기존 화면과 local/API 저장 모드를 유지합니다. 백엔드는 시작 가능한 기본 골격이며 업무 API·로그인·DB 저장·외부 연동은 이후 구현합니다. DB는 핵심 7개 테이블 설계를 유지하고 별도 Flyway 명령으로 관리합니다. 로컬 화면과 서버 실행에는 MySQL이 필요하지 않습니다.
 
 ## 로컬 화면만 실행
 
 백엔드·DB 없이 React 예시 화면을 실행합니다.
 
 ```powershell
-# 저장소 루트에서
-powershell -NoProfile -ExecutionPolicy Bypass -File .\frontend\run-local.ps1
+cd frontend
+npm ci       # 처음 설치할 때
+npm run dev
 ```
 
 주소는 **http://127.0.0.1:4173** 입니다. 입력은 각자의 브라우저에 저장하며 팀원과 공유하지 않습니다. 백엔드 업무 기능·DB 연결은 담당자가 이후 구현합니다. [로컬 실행 안내](docs/LOCAL_DEVELOPMENT.md)를 참조하세요.
@@ -41,7 +42,6 @@ Node.js 22.12 이상에서 실행합니다.
 ```powershell
 cd frontend
 npm ci
-Copy-Item .env.example .env
 npm run dev
 ```
 
@@ -55,7 +55,7 @@ npm run build
 
 ## 백엔드 실행
 
-Java 21과 Maven 3.9 이상에서 실행합니다. Maven Wrapper는 아직 포함하지 않습니다.
+VS Code에서 Java 21 환경으로 `backend/src/main/java/com/roomcrosscheck/RoomCrossCheckApplication.java`의 Run을 누르면 됩니다. 터미널에서는 Maven 3.9 이상으로 아래 명령을 사용합니다. Maven Wrapper는 아직 포함하지 않습니다.
 
 ```powershell
 cd backend

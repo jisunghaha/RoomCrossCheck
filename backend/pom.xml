@@ -45,4 +45,46 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <!-- DB 관리 명령에만 사용하는 도구다. 일반 서버 실행에는 DB 연결을 추가하지 않는다. -->
+        <profile>
+            <id>db</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-maven-plugin</artifactId>
+                        <version>${flyway.version}</version>
+                        <configuration>
+                            <!-- 접속 정보는 명령을 실행하는 터미널의 환경변수에서 읽는다. -->
+                            <url>${env.DB_URL}</url>
+                            <user>${env.DB_USERNAME}</user>
+                            <password>${env.DB_PASSWORD}</password>
+                            <locations>
+                                <location>filesystem:${project.basedir}/src/main/resources/db/migration</location>
+                            </locations>
+                            <encoding>UTF-8</encoding>
+                            <cleanDisabled>true</cleanDisabled>
+                            <!-- 기존 테이블이 있는 DB를 확인 없이 초기 버전으로 간주하지 않는다. -->
+                            <baselineOnMigrate>false</baselineOnMigrate>
+                            <validateMigrationNaming>true</validateMigrationNaming>
+                        </configuration>
+                        <dependencies>
+                            <!-- Maven 도구에서만 MySQL을 사용하며 애플리케이션 의존성에는 포함하지 않는다. -->
+                            <dependency>
+                                <groupId>org.flywaydb</groupId>
+                                <artifactId>flyway-mysql</artifactId>
+                                <version>${flyway.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>com.mysql</groupId>
+                                <artifactId>mysql-connector-j</artifactId>
+                                <version>${mysql.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

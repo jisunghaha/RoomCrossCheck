@@ -1,6 +1,6 @@
 # RoomCrossCheck 핵심 DB 설계
 
-MySQL 8.4용 **7개 테이블**로 시작한다. 현재 스키마 초안만 작성했으며 실제 DB 서버 적용·Spring Boot 연결은 하지 않았다.
+MySQL 8.4용 **7개 테이블**로 시작한다. 현재 설계와 관계는 유지하고 Flyway Maven 도구로 버전별 SQL을 관리한다. 실제 MySQL 적용·업무 저장 API 연결은 아직 수행하지 않았다. 기본 서버 실행은 DB 없이 가능하다.
 
 | 테이블 | 역할 |
 |---|---|
@@ -23,7 +23,7 @@ MySQL 8.4용 **7개 테이블**로 시작한다. 현재 스키마 초안만 작�
 - [조회 예시](queries.sql)
 - [별도 테스트 DB용 검증 SQL](../../backend/src/test/resources/db/verify_schema.sql)
 
-## 생성 순서
+## 생성 순서: DB를 준비할 때만 실행
 
 저장소 루트에서 설치된 MySQL CLI를 실행하거나 Workbench로 파일을 연다.
 
@@ -35,11 +35,33 @@ MySQL 프롬프트:
 
 ```sql
 SOURCE docs/database/create_database.sql;
-SOURCE backend/src/main/resources/db/migration/V1__initial_schema.sql;
-SHOW TABLES;
+EXIT;
 ```
 
-빈 DB에 V1을 한 번 적용한다. V2 기본 항목 SQL은 사용하지 않는다. 이미 다른 버전의 스키마를 적용한 DB에는 이 V1을 재실행하지 말고 기존 자료를 보존할 변경 migration을 별도로 만든다. 실제 서버·계정·비밀번호는 아직 생성하지 않았다. Flyway를 도입하기 전까지 앱 시작 시 SQL은 자동 실행되지 않는다.
+DB 생성 후 PowerShell에서 접속 정보를 지정하고 실행한다. 아래 값은 예시이며 본인의 MySQL 계정을 사용한다. 비밀번호를 소스나 프론트 환경변수에 저장하지 않는다.
+
+```powershell
+# 프로젝트 루트에서
+$env:DB_URL = 'jdbc:mysql://127.0.0.1:3306/roomcrosscheck?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8'
+$env:DB_USERNAME = '본인의_MySQL_계정'
+$env:DB_PASSWORD = '본인의_MySQL_비밀번호'
+cd backend
+mvn -Pdb flyway:info
+mvn -Pdb flyway:migrate
+mvn -Pdb flyway:validate
+```
+
+`info`는 적용 상태, `migrate`는 미적용 SQL 실행, `validate`는 적용 이력과 SQL의 일치 여부를 확인한다. Flyway가 `flyway_schema_history` 관리 테이블을 추가하며 업무 테이블은 7개다. 다시 migrate해도 이미 적용한 V1은 재실행하지 않는다.
+
+이 Maven 프로필은 일반 서버 실행과 분리되어 있다. VS Code의 main 실행이나 `mvn spring-boot:run`은 DB 접속·migration을 하지 않는다. MySQL 서버 자체의 설치와 실행은 별도로 필요하다. PlanP와 마찬가지로 실행 중인 MySQL의 주소·계정을 사용하되, DB 이름은 `roomcrosscheck`로 분리한다.
+
+## 이후 변경과 기존 DB
+
+적용된 V1은 주석을 포함해 수정하지 않는다. 새 변경은 `V2__설명.sql`, `V3__설명.sql`로 추가한다. 현재 추가 기능용 V2나 시연 회원 데이터는 만들지 않는다.
+
+빈 DB에는 Flyway로 V1을 적용한다. 이미 수동 SQL로 만든 DB는 백업 후 스키마와 V1이 같은지 확인하고 이력 도입 절차를 별도로 결정한다. 자동 baseline은 꺼두며, 기존 DB에 V1을 다시 실행하거나 임의로 baseline 처리하지 않는다. `flyway:clean`도 비활성화한다.
+
+Flyway 명령은 [공식 Maven 문서](https://documentation.red-gate.com/flyway/reference/usage/maven-goal)를 기준으로 구성했다. 로그인·JPA 엔티티·업무 Repository는 이 작업에 포함하지 않는다.
 
 ## 유지하는 규칙
 

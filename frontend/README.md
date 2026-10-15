@@ -6,7 +6,7 @@
 
 ## 로컬 화면 실행
 
-백엔드 없이 화면을 확인하려면 저장소 루트에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\frontend\run-local.ps1`을 실행합니다. 예시 데이터와 브라우저 저장을 사용하며 자세한 내용은 [실행 안내](../docs/LOCAL_DEVELOPMENT.md)를 참조합니다.
+`frontend` 폴더에서 처음 한 번 `npm ci`, 이후 `npm run dev`로 화면을 엽니다. 예시 데이터와 브라우저 저장을 사용하며 자세한 내용은 [실행 안내](../docs/LOCAL_DEVELOPMENT.md)를 참조합니다. 기존 `run-local.ps1`은 선택용 편의 스크립트입니다.
 
 ## 1. 개발 시작하기
 
@@ -14,7 +14,6 @@ Node.js 22.12 이상을 준비하고 `frontend/` 폴더에서 실행합니다.
 
 ```bash
 npm ci
-cp .env.example .env
 npm run dev
 ```
 
