@@ -1,0 +1,61 @@
+{
+  "sampleId": "real-image-001",
+  "sampleType": "real_ad_single_image_smoke",
+  "model": "gemini-3.5-flash-lite",
+  "sourceSha256": "2350504e78c3dc4164cbde234a79678053e8ea10566ae7326cd9aaf1c33f1214",
+  "localSourcePath": ".runtime/sfr003-image-001/source.jpg",
+  "sourceDescription": "User-provided Zigbang screenshot 3 of the same listing; only this image sent.",
+  "scope": "Direct REST with current branch prompt and one inline JPEG; no Spring/MySQL/browser path.",
+  "freeTierEvidence": "Prior user-confirmed free-tier account; unchanged ready key binding; billing not enabled by this task.",
+  "privacyReview": "Visible screenshot checked: no name, phone, face, unit number or account identifier.",
+  "expected": {
+    "address": "마포구 서교동",
+    "depositWon": 10000000,
+    "monthlyRentWon": 500000,
+    "maintenanceFeeWon": 50000,
+    "areaSqm": 17.5,
+    "floor": 1
+  },
+  "expectedReview": "Assistant visual reading; human ground-truth review pending.",
+  "addressNotes": "Partial neighborhood address only, not a full street address or official record.",
+  "attempts": 1,
+  "requestedAtUtc": "2026-10-15T15:02:03.831917+00:00",
+  "status": "success",
+  "httpStatus": 200,
+  "representativeDatasetReady": false,
+  "ocrCharacterErrorRate": null,
+  "extraction": {
+    "rawText": "마포구 서교동\n서교동1층 최고가성비 붙박이장 완벽 12월 20일이후입주\n전용 17.5m²\n오픈형원룸 (욕실 1개)\n주차 불가능\n단일동 1층/3층\n2026.12.20 이후 입주 가능\n관리비 : 50,000원\n관리규약에 따라 부과해요.\n관리비 포함 항목\n채팅 문의 가능\n월세 1,000/50\n문의하기",
+    "address": "마포구 서교동",
+    "depositWon": 10000000,
+    "monthlyRentWon": 500000,
+    "maintenanceFeeWon": 50000,
+    "areaSqm": 17.5,
+    "floor": 1
+  },
+  "fieldMatches": {
+    "address": true,
+    "depositWon": true,
+    "monthlyRentWon": true,
+    "maintenanceFeeWon": true,
+    "areaSqm": true,
+    "floor": true
+  },
+  "usageMetadata": {
+    "promptTokenCount": 1245,
+    "candidatesTokenCount": 233,
+    "totalTokenCount": 1478,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 167
+      },
+      {
+        "modality": "IMAGE",
+        "tokenCount": 1078
+      }
+    ],
+    "serviceTier": "standard"
+  },
+  "responseModelVersion": "gemini-3.5-flash-lite"
+}
