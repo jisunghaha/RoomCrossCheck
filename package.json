@@ -16,6 +16,7 @@
     "test": "npm --workspace frontend test",
     "test:runtime": "python tests/java-runtime.test.py && python tests/evaluation-readiness.test.py",
     "test:browser": "python scripts/verify-sfr003-browser.py",
+    "test:browser:replay": "python scripts/verify-sfr003-browser.py --replay-image-001",
     "evaluation:check": "python scripts/check-sfr003-evaluation.py"
   },
   "devDependencies": {
