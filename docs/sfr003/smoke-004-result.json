@@ -1,0 +1,22 @@
+{
+  "sampleId": "synthetic-smoke-004",
+  "sampleType": "synthetic_smoke_not_representative_dataset",
+  "model": "gemini-2.5-flash-lite",
+  "sourceText": "가상 광고 004: 보증금 300만원, 월세 28만원, 관리비 2만원. 면적 16.5㎡, 4층. 주소 미기재. 실제 사람이나 매물이 아닙니다.",
+  "expected": {
+    "address": null,
+    "depositWon": 3000000,
+    "monthlyRentWon": 280000,
+    "maintenanceFeeWon": 20000,
+    "areaSqm": 16.5,
+    "floor": 4
+  },
+  "requestedAtUtc": "2026-10-14T14:30:15.714252+00:00",
+  "freeTierEvidence": "User-confirmed free-tier account",
+  "scope": "Direct REST using branch prompt",
+  "attempts": 1,
+  "status": "failed",
+  "httpStatus": 404,
+  "errorStatus": "NOT_FOUND",
+  "errorMessage": "This model models/gemini-2.5-flash-lite is no longer available to new users. Please update your code to use models/gemini-3.5-flash-lite for the latest features and improvements. We recommend you to use the Interactions API (https://ai.google.dev/gemini-api/docs/get-started)."
+}

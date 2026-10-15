@@ -17,7 +17,7 @@ public class Listing {
     @Column(precision = 10, scale = 2) public BigDecimal area;
     @Column(length = 10) public String areaType;
     public Integer floor;
-    @Column(length = 3000) public String original;
+    @Column(length = 10000) public String original;
     @Column(nullable = false) public LocalDate createdAt;
     @Column(nullable = false) public String building;
 

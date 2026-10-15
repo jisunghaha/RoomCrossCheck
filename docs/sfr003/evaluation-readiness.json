@@ -1,0 +1,331 @@
+{
+  "scope": "offline_representative_dataset_readiness",
+  "target": 20,
+  "templateRows": 20,
+  "readySamples": 0,
+  "additionalReadySamplesNeeded": 20,
+  "accuracy": null,
+  "externalApiCalls": 0,
+  "issues": [
+    {
+      "sampleId": "eval-001",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-002",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-003",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-004",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-005",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-006",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-007",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-008",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-009",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-010",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-011",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-012",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-013",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-014",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-015",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-016",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-017",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-018",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-019",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    },
+    {
+      "sampleId": "eval-020",
+      "missingOrInvalid": [
+        "representativeSampleType",
+        "privacyConfirmation",
+        "humanTruthReviewer",
+        "sourceFile",
+        "expectedRawTextFile",
+        "expectedAddress",
+        "expectedDepositWon",
+        "expectedMonthlyRentWon",
+        "expectedMaintenanceFeeWon",
+        "expectedAreaSqm",
+        "expectedFloor"
+      ]
+    }
+  ]
+}

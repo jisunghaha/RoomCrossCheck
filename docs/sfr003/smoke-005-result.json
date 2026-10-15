@@ -1,0 +1,38 @@
+{
+  "sampleId": "synthetic-smoke-005",
+  "sampleType": "synthetic_smoke_not_representative_dataset",
+  "model": "gemini-3.5-flash-lite",
+  "sourceText": "가상 테스트 광고 005입니다. 보증금 700만원, 월세 48만원, 관리비 4만원. 면적 22㎡, 5층. 주소 없음. 개인정보 없는 합성 광고입니다.",
+  "expected": {
+    "address": null,
+    "depositWon": 7000000,
+    "monthlyRentWon": 480000,
+    "maintenanceFeeWon": 40000,
+    "areaSqm": 22,
+    "floor": 5
+  },
+  "requestedAtUtc": "2026-10-14T14:30:46.233545+00:00",
+  "freeTierEvidence": "User-confirmed free-tier account",
+  "modelSelectionEvidence": "Replacement model named by Gemini error response for 2.5 Flash Lite",
+  "scope": "Direct REST using branch prompt",
+  "attempts": 1,
+  "status": "success",
+  "httpStatus": 200,
+  "extraction": {
+    "rawText": "가상 테스트 광고 005입니다. 보증금 700만원, 월세 48만원, 관리비 4만원. 면적 22㎡, 5층. 주소 없음. 개인정보 없는 합성 광고입니다.",
+    "address": null,
+    "depositWon": 7000000,
+    "monthlyRentWon": 480000,
+    "maintenanceFeeWon": 40000,
+    "areaSqm": 22.0,
+    "floor": 5
+  },
+  "fieldMatches": {
+    "address": true,
+    "depositWon": true,
+    "monthlyRentWon": true,
+    "maintenanceFeeWon": true,
+    "areaSqm": true,
+    "floor": true
+  }
+}

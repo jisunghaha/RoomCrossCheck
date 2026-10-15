@@ -191,14 +191,40 @@ npm run build
 
 ## 11. SFR-003 Gemini 추출 (로컬 개발)
 
-확정한 광고에서 **Gemini 추출 시작**을 누르면 광고 글과 저장된 이미지를 서버에서 Gemini API로 보내고, 광고 원문·주소·보증금·월세·관리비·면적·층수를 구조화합니다. 응답은 `EXTRACTION_READY`로 보관하며, 사용자가 원본과 비교해 값을 고쳐 **확인한 값 저장**을 눌러야 `REVIEWED`가 됩니다. 실패하면 `EXTRACTION_FAILED`가 표시되고 재시도할 수 있습니다. 추출 결과와 확인한 값은 별도로 저장합니다. 아직 매물 카드나 건축물대장 조회에는 자동 반영하지 않습니다.
+확정한 광고에서 **Gemini 추출 시작**을 누르면 광고 글과 저장된 이미지를 서버에서 Gemini API로 보내고, 광고 원문·주소·보증금·월세·관리비·면적·층수를 구조화합니다. 응답은 `EXTRACTION_READY`로 보관하며, 사용자가 원본과 비교해 값을 고쳐 **확인한 값 저장**을 눌러야 `REVIEWED`가 됩니다. **확인한 값으로 매물 등록**을 누르면 기존 매물 폼이 채워집니다. 이름·주소·값을 수정하고 저장해야 매물이 생성됩니다. 광고 값은 건축물대장 공식 정보로 사용하지 않습니다. 실패하면 `EXTRACTION_FAILED`가 표시됩니다. 이미 요청 기록이 있는 광고는 검증 목적으로 반복 호출하지 않습니다.
 
 외부 API 사용은 기본적으로 **꺼져 있습니다**. 실제 무료 등급의 사용 가능 여부와 한도를 계정에서 확인한 뒤, 로컬 `.env`에만 다음 값을 설정하고 `./scripts/dev-up.sh`를 다시 실행하세요. API 키 전체 값을 채팅이나 Git에 올리지 마세요.
 
 ```dotenv
 GEMINI_ENABLED=true
 GEMINI_API_KEY=본인_키를_로컬에서만_입력
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-`GEMINI_ENABLED=false` 또는 키가 비어 있으면 추출 API는 503을 반환하고 외부 요청을 보내지 않습니다. 무료 등급은 모델별 호출 한도가 있고 조건이 바뀔 수 있으므로, 실제 호출 전 AI Studio에서 해당 프로젝트의 결제 등급과 한도를 확인하세요. 한도 초과 시 429를 반환합니다. 광고 등록부터 결과 수정·DB 재조회까지 로컬 가짜 Gemini 서버로 검증했으며 실제 Google API 호출은 키가 없어 검증하지 않았습니다. 테스트 서버 주소는 `GEMINI_BASE_URL`로 바꿀 수 있지만 실제 키와 함께 신뢰할 수 없는 서버 주소를 사용하지 마세요. 광고 이미지에 개인정보가 있다면 외부 전송 전 제거하고 학교 계정의 데이터 이용 조건을 확인하세요.
+`GEMINI_ENABLED=false` 또는 키가 비어 있으면 추출 API는 503을 반환하고 외부 요청을 보내지 않습니다. 무료 등급은 모델별 호출 한도가 있고 조건이 바뀔 수 있으므로, 실제 호출 전 AI Studio에서 해당 프로젝트의 결제 등급과 한도를 확인하세요. 한도 초과 시 429를 반환합니다. `gemini-3.5-flash-lite`로 개인정보 없는 합성 글 광고의 실제 REST 추출과 Spring Boot→Gemini→MySQL 저장·재조회가 성공했습니다. 대표 광고 20건의 정확도와 이미지 OCR은 아직 평가하지 않았습니다. 테스트 서버 주소는 `GEMINI_BASE_URL`로 바꿀 수 있지만 실제 키와 함께 신뢰할 수 없는 서버 주소를 사용하지 마세요. 상세 결과와 클라우드 Java 프록시·CA 설정 범위는 [검증 기록](docs/sfr003/VALIDATION.md)을 참고하세요.
+
+### 일반 실행의 프록시·인증서 설정
+
+`./scripts/dev-up.sh`는 모델 기본값 `gemini-3.5-flash-lite`를 사용하는 Compose 백엔드를 빌드하고 실행합니다. 클라우드에서는 상속된 `HTTPS_PROXY`와 공개 CA 파일 `CODEX_PROXY_CERT`(또는 `JAVA_PROXY_CA_FILE`)을 사용해 `.runtime/compose.java-runtime.json`을 생성합니다. 컨테이너 시작 시 Java HTTPS 프록시와 임시 신뢰 저장소에 적용하며 TLS 검증을 유지합니다. 프록시·CA 설정이 없는 일반 로컬 환경에서는 기본 Java 신뢰 설정을 사용합니다. API 키는 환경에서만 전달하며 생성된 runtime 설정 파일에는 넣지 않습니다. `DOCKER_CONFIG`와 기존 레지스트리 인증은 유지합니다.
+
+runtime 설정이 생성된 뒤 스택 상태 확인·종료 시에도 같은 Compose 파일을 사용합니다. 기본 종료 명령은 DB 볼륨을 삭제하지 않습니다.
+
+```sh
+docker compose -f compose.yaml -f .runtime/compose.java-runtime.json ps
+docker compose -f compose.yaml -f .runtime/compose.java-runtime.json down
+```
+
+키 없는 읽기 요청으로 일반 컨테이너의 Java 프록시·CA 통신을 확인했고, 새 실제 생성 요청은 하지 않았습니다. 설정에 문제가 있으면 CA 파일·프록시 형식·DNS를 점검합니다. 인증 정보가 포함된 프록시 URL은 현재 helper에서 지원하지 않으며 URL이나 비밀값을 오류 메시지로 출력하지 않습니다.
+
+### 화면 흐름과 평가 준비 점검
+
+```sh
+npm test
+npm run test:runtime
+npm run test:browser
+npm run evaluation:check
+```
+
+브라우저 검증에는 Docker, Python 3, 시스템 Chromium과 npm 의존성이 필요합니다. Chromium 경로가 다르면 `CHROMIUM_PATH`를 설정합니다. `test:browser`는 별도 Compose 프로젝트와 임시 DB 볼륨, 로컬 가짜 추출 서버를 사용해 **광고 등록 → 확정 → 추출 → 확인 값 수정·저장 → 매물 폼 수정·등록 → 새로고침**을 실제 Chromium에서 검증하고 테스트 스택만 정리합니다. 외부 Gemini 생성 요청은 0건입니다. 인증·공식정보 기능은 추가하지 않습니다.
+
+20건 평가에 필요한 원본·정답·CSV 작성 규칙은 [평가 자료 준비](docs/sfr003/EVALUATION_INPUTS.md)에 있습니다. `evaluation:check`는 준비된 자료 수만 확인하며 API 호출이나 정확도 계산은 하지 않습니다.

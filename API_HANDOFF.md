@@ -105,4 +105,12 @@ multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최�
 
 추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null)입니다. 확인 요청은 이 일곱 필드를 JSON 본문에 담습니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
 
-Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 `gemini-2.5-flash`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 모델별 무료 한도와 계정 조건은 실제 사용 전 확인해야 합니다. 현재 로그인·소유권 검증이 없어 이 API도 로컬 개발 전용입니다. 실제 Gemini 서비스와의 통합은 키 없이 테스트할 수 없어, 로컬 가짜 서버·서비스 테스트로 요청 형식과 결과 저장을 검증했습니다.
+Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 실제 생성 응답 HTTP 200과 정답 6개 필드 일치를 확인한 `gemini-3.5-flash-lite`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 기존 2.5 Flash·2.5 Flash Lite는 신규 사용자 지원 종료로 404를 반환했고, 3.8 Flash·Flash Latest는 혼잡으로 503을 반환했습니다. 모델 목록에 존재하는 것과 생성 가능 여부는 다릅니다. 무료 등급·해당 모델의 사용 가능 여부를 확인하고, 불확실하면 호출하지 않습니다. 현재 로그인·소유권 검증이 없어 이 API도 로컬 개발 전용입니다. 실제 호출 기록과 가짜 서버 검증 범위는 [SFR-003 검증 기록](docs/sfr003/VALIDATION.md)을 참고하세요.
+
+### 확인한 광고 값으로 매물 등록
+
+`REVIEWED` 상태이면서 `reviewed` 값이 있는 광고에만 ‘확인한 값으로 매물 등록’ 버튼이 표시됩니다. 마지막으로 저장한 확인 값을 기존 매물 폼에 채우며, 클릭만으로 매물을 저장하지 않습니다. 수정 중인 확인 값은 먼저 저장해야 반영됩니다. 사용자가 이름·누락 주소·면적 종류를 확인하고 수정한 뒤 `/api/listings`에 저장합니다. 금액은 원 → 화면의 만원 → 저장 시 정수 원으로 변환하며, null·0·지하층을 유지합니다. 주소 힌트와 미확인 AI 값으로 빈칸을 추론하지 않습니다.
+
+광고 값은 건축물대장 공식 정보가 아니며 `official`에 넣지 않습니다. 면적 종류는 추출 스키마에 없어 ‘미상’으로 시작합니다. 등록 시 원문은 글 광고 원본, 글이 없는 이미지 광고는 사용자가 확인한 OCR 글을 사용합니다. 원문 제한은 추출과 동일하게 10,000자로, 지하층은 -20까지 맞췄습니다. 로컬 JPA `ddl-auto=update`로 컬럼이 확장되며 운영 환경에는 명시적인 스키마 마이그레이션이 필요합니다. 광고 ID와 매물 ID의 영구 연결·중복 등록 방지는 후속 범위입니다.
+
+일반 실행은 `scripts/dev-up.sh` → 공개 runtime Compose 설정 생성 → `backend/docker-entrypoint.sh`의 Java 프록시·CA 적용 경로를 사용합니다. 외부 생성 API는 여전히 명시적인 `GEMINI_ENABLED=true` 설정이 필요합니다. 실제 Chromium에서 Vite 프록시·Spring Boot·MySQL을 거친 사용자 확인과 매물 등록 흐름을 로컬 추출 서버로 검증했습니다. 이번 검증은 실제 Gemini 광고를 재요청하지 않았습니다.

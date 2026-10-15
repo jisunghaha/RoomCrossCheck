@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { reviewedAdvertisementValues } from "../lib/advertisement.js";
 
 const labels = {
   DRAFT: "임시 저장", EXTRACTION_PENDING: "추출 대기", EXTRACTION_READY: "추출 결과 확인 필요",
@@ -32,7 +33,7 @@ function ReviewForm({ draft, busy, onSave }) {
   </form>;
 }
 
-export default function AdDraftPanel() {
+export default function AdDraftPanel({ onRegister }) {
   const [drafts, setDrafts] = useState([]);
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
@@ -129,6 +130,10 @@ export default function AdDraftPanel() {
         {["EXTRACTION_PENDING", "EXTRACTION_FAILED"].includes(draft.status) && <button className="secondary" disabled={busy} onClick={() => extract(draft.id)}>{draft.status === "EXTRACTION_FAILED" ? "Gemini 추출 재시도" : "Gemini 추출 시작"}</button>}
         {draft.extractionError && <p role="status">이전 추출 오류: {draft.extractionError}</p>}
         {["EXTRACTION_READY", "REVIEWED"].includes(draft.status) && <ReviewForm key={`${draft.id}-${draft.status}-${draft.reviewedAt || ""}`} draft={draft} busy={busy} onSave={saveReview} />}
+        {onRegister && reviewedAdvertisementValues(draft) && <>
+          <p className="helper">마지막으로 저장한 확인 값으로 매물 입력을 시작합니다. 수정 중인 값은 먼저 저장해 주세요.</p>
+          <button className="secondary" disabled={busy} onClick={() => onRegister(reviewedAdvertisementValues(draft), draft.id)}>확인한 값으로 매물 등록</button>
+        </>}
       </article>)}
     </div>}
   </section>;
