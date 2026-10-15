@@ -70,7 +70,8 @@ function VisitEditor({ room }) {
   );
 }
 export default function VisitsPage({ initialRoom }) {
-  const { rooms } = useRooms();
+  const { rooms: allRooms } = useRooms();
+  const rooms = allRooms.filter(r => r.status !== "DRAFT");
   const [active, setActive] = useState(initialRoom || rooms[0]?.id);
   const room = rooms.find((r) => r.id === active) || rooms[0];
   return (

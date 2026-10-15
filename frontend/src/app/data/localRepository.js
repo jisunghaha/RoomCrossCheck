@@ -14,7 +14,7 @@ export function createLocalRepository(storage = window.localStorage) {
     async saveRoom(values, id) {
       const old = state.rooms.find(r => r.id === id);
       const saved = {
-        ...values, id: id || crypto.randomUUID(),
+        ...old, ...values, id: id || crypto.randomUUID(),
         building: old?.address === values.address ? old.building : crypto.randomUUID(),
         tags: old?.tags || ["직접 등록"], theme: old?.theme || "sage", official: null,
         createdAt: old?.createdAt || new Date().toISOString().slice(0, 10),

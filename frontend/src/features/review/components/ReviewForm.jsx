@@ -4,7 +4,7 @@ import { categories } from "../domain/categories.js";
 import { Field } from "../../../shared/ui/UI.jsx";
 export default function ReviewForm({ onDone, onCancel }) {
   const { rooms, addReview } = useRooms();
-  const buildings = [...new Map(rooms.map((r) => [r.building, r])).values()];
+  const buildings = [...new Map(rooms.filter(r => r.status !== "DRAFT").map((r) => [r.building, r])).values()];
   const [building, setBuilding] = useState(buildings[0]?.building || ""),
     [period, setPeriod] = useState(""),
     [body, setBody] = useState(""),

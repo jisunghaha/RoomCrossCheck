@@ -18,10 +18,11 @@ export default function RoomCard({ room: r, onDetail }) {
           <input
             type="checkbox"
             checked={picked}
+            disabled={r.status === "DRAFT"}
             onChange={() => toggleSelected(r.id)}
             aria-label={`${r.name} 비교 선택`}
           />
-          <span>비교 선택</span>
+          <span>{r.status === "DRAFT" ? "확정 후 비교" : "비교 선택"}</span>
         </label>
         <AuditBadge room={r} />
       </div>
@@ -38,7 +39,7 @@ export default function RoomCard({ room: r, onDetail }) {
           <small>보증금 / 월세</small>
         </div>
         <div className="room-meta">
-          {r.area ?? "—"}㎡ · {r.areaType} · {r.floor ?? "—"}층{" "}
+          {r.area ?? "—"}㎡ · {r.areaType || "미상"} · {r.floor ?? "—"}층{" "}
           <span>관리비 {money(r.fee)}</span>
         </div>
         <div className="tags">

@@ -8,8 +8,11 @@ import RoomForm from "../features/listing/components/RoomForm.jsx";
 import ReviewForm from "../features/review/components/ReviewForm.jsx";
 import RoomsPage from "../features/listing/pages/RoomsPage.jsx";
 import ComparePage from "../features/comparison/pages/ComparePage.jsx";
-import ReviewsPage from "../features/review/pages/ReviewsPage.jsx";
 import VisitsPage from "../features/visit/pages/VisitsPage.jsx";
+import HomePage from "../features/home/pages/HomePage.jsx";
+import AuthPage from "../features/auth/pages/AuthPage.jsx";
+import RegisterRoomPage from "../features/listing/pages/RegisterRoomPage.jsx";
+import CommunityPage, { CommunityPostPage } from "../features/community/pages/CommunityPage.jsx";
 export default function App() {
   const [page, navigate] = useHashRoute();
   const { rooms, deleteRoom, toast, loading, loadError, saving, reload, dataMode } = useRooms();
@@ -26,17 +29,19 @@ export default function App() {
     <>
       <fieldset disabled={saving} className="data-operation-boundary" aria-busy={saving}>
       <Layout page={page} onGuide={() => setModal({ type: "guide" })}>
+        {page === "home" && <HomePage navigate={navigate} />}
+        {["login", "signup"].includes(page) && <AuthPage key={page} mode={page} navigate={navigate} />}
+        {(page === "register" || page.startsWith("register/")) && <RegisterRoomPage key={page} room={rooms.find(r => r.id === page.split("/")[1])} navigate={navigate} />}
+        {(page === "community" || page.startsWith("community/")) && <CommunityPage key={page} tab={page.split("/")[1] || "notice"} navigate={navigate} onAddReview={() => setModal({ type: "review" })} />}
+        {page.startsWith("post/") && <CommunityPostPage id={page.split("/")[1]} navigate={navigate} />}
         {page === "rooms" && (
           <RoomsPage
-            onAdd={() => setModal({ type: "form" })}
+            onAdd={() => navigate("register")}
             onDetail={(id) => setModal({ type: "detail", id })}
             navigate={navigate}
           />
         )}
         {page === "compare" && <ComparePage navigate={navigate} />}
-        {page === "reviews" && (
-          <ReviewsPage onAdd={() => setModal({ type: "review" })} />
-        )}
         {page === "visits" && (
           <VisitsPage key={visitRoom || "default"} initialRoom={visitRoom} />
         )}
@@ -77,7 +82,11 @@ export default function App() {
           {modal.type === "detail" && room && (
             <RoomDetail
               room={room}
-              onEdit={() => setModal({ type: "form", id: room.id })}
+              onEdit={() => {
+                if (room.status === "DRAFT") { close(); navigate(`register/${room.id}`); }
+                else setModal({ type: "form", id: room.id });
+              }}
+              onReviews={() => { close(); navigate("community/reviews"); }}
               onDelete={() => setModal({ type: "delete", id: room.id })}
               onVisit={() => {
                 setVisitRoom(room.id);
@@ -129,7 +138,7 @@ export default function App() {
               </ol>
               <div className="notice">
                 {dataMode === "local"
-                  ? "현재 데이터는 이 브라우저에 저장됩니다. 로그인·OCR·공공 API는 아직 연결되지 않았습니다."
+                  ? "현재 데이터는 이 브라우저에 저장됩니다. 회원 폼은 입력 검증용이며 인증·OCR·공공 조회는 연동 준비 중입니다."
                   : "데이터는 연결된 서버를 통해 저장됩니다. 로그인·OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
               </div>
             </>

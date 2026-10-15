@@ -9,7 +9,8 @@ import { AuditBadge } from "../../crosscheck/components/AuditBadge.jsx";
 import { Icon, PageHeading } from "../../../shared/ui/UI.jsx";
 import { RoomScene } from "../../listing/components/RoomScene.jsx";
 export default function ComparePage({ navigate }) {
-  const { rooms, reviews, visits, selected, toggleSelected } = useRooms();
+  const { rooms: allRooms, reviews, visits, selected, toggleSelected } = useRooms();
+  const rooms = allRooms.filter(r => r.status !== "DRAFT");
   const chosen = rooms.filter((r) => selected.includes(r.id));
   const rows = [
     ["보증금", (r) => money(r.deposit)],

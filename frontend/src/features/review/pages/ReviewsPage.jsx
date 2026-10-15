@@ -12,7 +12,7 @@ export default function ReviewsPage({ onAdd }) {
         title="살아본 사람의 이야기."
         description="서류에 없는 생활의 질, 8가지 항목으로 확인하세요."
       >
-        <button className="primary" onClick={onAdd} disabled={!rooms.length}>
+        <button className="primary" onClick={onAdd} disabled={!rooms.some(r => r.status !== "DRAFT")}>
           <Icon name="plus" />
           후기 작성
         </button>

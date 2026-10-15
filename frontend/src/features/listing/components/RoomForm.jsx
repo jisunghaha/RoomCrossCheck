@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { useRooms } from "../../../app/state/RoomContext.jsx";
 import { Field } from "../../../shared/ui/UI.jsx";
-export default function RoomForm({ room, onDone, onCancel }) {
+export default function RoomForm({ room, initialValues, onPreview, heading, helperText, onDone, onCancel }) {
   const { saveRoom } = useRooms();
+  const initial = room || initialValues;
   const [values, setValues] = useState(() => ({
-    name: room?.name || "",
-    address: room?.address || "",
-    deposit: room?.deposit == null ? "" : room.deposit / 10000,
-    rent: room?.rent == null ? "" : room.rent / 10000,
-    fee: room?.fee == null ? "" : room.fee / 10000,
-    area: room?.area ?? "",
-    areaType: room?.areaType || "미상",
-    floor: room?.floor ?? "",
-    original: room?.original || "",
+    name: initial?.name || "",
+    address: initial?.address || "",
+    deposit: initial?.deposit == null ? "" : initial.deposit / 10000,
+    rent: initial?.rent == null ? "" : initial.rent / 10000,
+    fee: initial?.fee == null ? "" : initial.fee / 10000,
+    area: initial?.area ?? "",
+    areaType: initial?.areaType || "미상",
+    floor: initial?.floor ?? "",
+    original: initial?.original || "",
   }));
   const [error, setError] = useState("");
   const bind = (key) => ({
@@ -20,16 +21,10 @@ export default function RoomForm({ room, onDone, onCancel }) {
     value: values[key],
     onChange: (e) => setValues((v) => ({ ...v, [key]: e.target.value })),
   });
-  async function submit(e) {
-    e.preventDefault();
-    if (!values.name.trim() || !values.address.trim()) {
-      setError("이름과 주소를 입력해 주세요.");
-      return;
-    }
+  function inputValues() {
     const number = (key, scale = 1) =>
       values[key] === "" ? null : Number(values[key]) * scale;
-    const saved = await saveRoom(
-      {
+    return {
         ...values,
         name: values.name.trim(),
         address: values.address.trim(),
@@ -38,17 +33,25 @@ export default function RoomForm({ room, onDone, onCancel }) {
         fee: number("fee", 10000),
         area: number("area"),
         floor: number("floor"),
-      },
-      room?.id,
-    );
+      };
+  }
+  async function submit(e) {
+    e.preventDefault();
+    if (!values.name.trim() || !values.address.trim()) {
+      setError("이름과 주소를 입력해 주세요.");
+      return;
+    }
+    const input = inputValues();
+    // 단계형 등록에서는 금액 단위를 변환한 입력만 전달하고 최종 확인 전에는 저장하지 않는다.
+    if (onPreview) { onPreview(input); return; }
+    const saved = await saveRoom(input, room?.id);
     if (saved) onDone();
   }
   return (
     <>
-      <h2>{room ? "매물 정보 수정" : "새로운 방을 저장하세요"}</h2>
+      <h2>{heading || (room ? "매물 정보 수정" : "새로운 방을 저장하세요")}</h2>
       <p className="helper">
-        직접 확인한 광고 정보를 입력하세요. OCR·공식정보 조회는 백엔드 연결 후
-        사용할 수 있습니다.
+        {helperText || "직접 확인한 광고 정보를 입력하세요. OCR·공식정보 조회는 백엔드 연결 후 사용할 수 있습니다."}
       </p>
       <form onSubmit={submit}>
         <Field label="매물 이름 *">
@@ -117,11 +120,11 @@ export default function RoomForm({ room, onDone, onCancel }) {
         </p>
         {error && <p role="alert">{error}</p>}
         <div className="modal-actions">
-          <button className="secondary" type="button" onClick={onCancel}>
-            취소
+          <button className="secondary" type="button" onClick={() => onCancel(inputValues())}>
+            {onPreview ? "이전 단계" : "취소"}
           </button>
           <button className="primary" type="submit">
-            {room ? "변경 저장" : "매물 저장"}
+            {onPreview ? "확정 내용 확인" : room ? "변경 저장" : "매물 저장"}
           </button>
         </div>
       </form>

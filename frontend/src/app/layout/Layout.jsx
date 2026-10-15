@@ -1,17 +1,21 @@
 import { useRooms } from "../state/RoomContext.jsx";
 import { Icon } from "../../shared/ui/UI.jsx";
 export const navigation = [
+  ["home", "home", "서비스 소개"],
   ["rooms", "home", "관심 매물"],
+  ["register", "plus", "매물 등록"],
   ["compare", "compare", "매물 비교"],
-  ["reviews", "review", "거주 후기"],
   ["visits", "book", "방문 체크리스트"],
+  ["community", "review", "커뮤니티"],
 ];
 export default function Layout({ page, onGuide, children }) {
   const { rooms, dataMode } = useRooms();
+  const section = page.startsWith("post/") ? "community" : page.split("/")[0];
+  const title = { login: "로그인", signup: "회원가입" }[section] || navigation.find((n) => n[0] === section)?.[2];
   return (
     <>
       <aside className="sidebar">
-        <a className="brand" href="#rooms">
+        <a className="brand" href="#home">
           <Icon name="home" />
           <span>
             원룸체크<span className="brand-dot">.</span>
@@ -31,8 +35,8 @@ export default function Layout({ page, onGuide, children }) {
             <a
               key={p}
               href={`#${p}`}
-              className={`nav-item ${page === p ? "active" : ""}`}
-              aria-current={page === p ? "page" : undefined}
+              className={`nav-item ${section === p ? "active" : ""}`}
+              aria-current={section === p ? "page" : undefined}
             >
               <Icon name={icon} />
               {title}
@@ -59,7 +63,7 @@ export default function Layout({ page, onGuide, children }) {
         <div className="profile">
           <div className="avatar">나</div>
           <div>
-            <strong>데모 사용자</strong>
+            <strong>둘러보는 중</strong>
             <small>{dataMode === "api" ? "서버 저장 모드" : "브라우저에만 저장됩니다"}</small>
           </div>
           <span className="demo-dot" />
@@ -69,9 +73,13 @@ export default function Layout({ page, onGuide, children }) {
         <header className="topbar">
           <div>
             나의 자취 준비 <span>/</span>
-            <strong>{navigation.find((n) => n[0] === page)?.[2]}</strong>
+            <strong>{title}</strong>
           </div>
-          <span className="demo-badge">{dataMode === "api" ? "SERVER" : "REACT DEMO"}</span>
+          <div className="header-actions">
+            <span className="demo-badge">{dataMode === "api" ? "SERVER" : "화면 시연"}</span>
+            <a href="#login" aria-current={section === "login" ? "page" : undefined}>로그인</a>
+            <a href="#signup" className="header-signup" aria-current={section === "signup" ? "page" : undefined}>회원가입</a>
+          </div>
         </header>
         <div className="content">{children}</div>
         <footer>

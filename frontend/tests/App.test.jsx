@@ -18,13 +18,16 @@ function setup() {
 test("React registration, editing and reload preserve null and zero", async () => {
   const { user, unmount } = setup();
   await user.click(screen.getByRole("button", { name: "새 매물 등록" }));
-  let dialog = within(screen.getByRole("dialog"));
-  await user.type(dialog.getByLabelText("매물 이름 *"), "리액트 검증 매물");
-  await user.type(dialog.getByLabelText("주소 / 건물명 *"), "가상 주소");
-  await user.type(dialog.getByLabelText("월세 (만원)"), "40");
-  await user.click(dialog.getByRole("button", { name: "매물 저장" }));
+  await user.type(screen.getByLabelText("주소 / 건물명 *"), "가상 주소");
+  await user.type(screen.getByLabelText("광고 글"), "월세 40만원의 가상 광고");
+  await user.click(screen.getByRole("button", { name: "값 확인으로 이동" }));
+  await user.type(screen.getByLabelText("매물 이름 *"), "리액트 검증 매물");
+  await user.type(screen.getByLabelText("월세 (만원)"), "40");
+  await user.click(screen.getByRole("button", { name: "확정 내용 확인" }));
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  await user.click(screen.getByRole("button", { name: "확정 저장" }));
   await user.click(screen.getByRole("button", { name: "리액트 검증 매물" }));
-  dialog = within(screen.getByRole("dialog"));
+  let dialog = within(screen.getByRole("dialog"));
   expect(dialog.getAllByText("정보 없음").length).toBeGreaterThan(0);
   await user.click(dialog.getByRole("button", { name: "정보 수정" }));
   dialog = within(screen.getByRole("dialog"));
@@ -64,6 +67,7 @@ test("comparison requires two listings and displays separate actual match counts
 });
 test("review creates updated aggregate; deletion restores existing samples", async () => {
   const { user } = setup();
+  await user.click(screen.getByRole("link", { name: "커뮤니티" }));
   await user.click(screen.getByRole("link", { name: "거주 후기" }));
   await user.click(await screen.findByRole("button", { name: "후기 작성" }));
   const d = within(screen.getByRole("dialog"));

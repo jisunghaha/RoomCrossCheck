@@ -35,12 +35,16 @@ test("failed async save keeps form input and does not announce success", async (
   repo.saveRoom = vi.fn().mockRejectedValue(new Error("서버 저장 실패"));
   render(<RoomProvider repository={repo}><App /></RoomProvider>);
   await user.click(screen.getByRole("button", { name: "새 매물 등록" }));
-  await user.type(screen.getByLabelText("매물 이름 *"), "보존할 입력");
   await user.type(screen.getByLabelText("주소 / 건물명 *"), "주소");
-  await user.click(screen.getByRole("button", { name: "매물 저장" }));
+  await user.type(screen.getByLabelText("광고 글"), "저장 실패 확인용 광고");
+  await user.click(screen.getByRole("button", { name: "값 확인으로 이동" }));
+  await user.type(screen.getByLabelText("매물 이름 *"), "보존할 입력");
+  await user.click(screen.getByRole("button", { name: "확정 내용 확인" }));
+  await user.click(screen.getByRole("button", { name: "확정 저장" }));
   expect(await screen.findByText("서버 저장 실패")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "내용 수정" }));
   expect(screen.getByLabelText("매물 이름 *")).toHaveValue("보존할 입력");
-  expect(screen.getByRole("dialog")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "매물 정보를 직접 입력하세요" })).toBeInTheDocument();
 });
 test("API initial load can recover by retry without displaying demo", async () => {
   const repo = { mode: "api", initialState: () => ({ rooms: [], reviews: [], visits: {} }),

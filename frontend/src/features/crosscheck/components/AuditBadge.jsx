@@ -1,6 +1,7 @@
 import { audit } from "../domain/audit.js";
 import { Icon } from "../../../shared/ui/UI.jsx";
 export function AuditBadge({ room }) {
+  if (room.status === "DRAFT") return <span className="badge muted">임시 저장</span>;
   const { count, rate } = audit(room);
   return (
     <span

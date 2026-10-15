@@ -14,7 +14,7 @@ export default function RoomsPage({ onAdd, onDetail, navigate }) {
         .filter(
           (r) =>
             (r.name + " " + r.address).includes(query) &&
-            (filter === "all" ||
+            (filter === "all" || (filter === "draft" && r.status === "DRAFT") ||
               (filter === "match" && audit(r).rate === 100) ||
               (filter === "check" && audit(r).rate !== 100)),
         )
@@ -40,8 +40,8 @@ export default function RoomsPage({ onAdd, onDetail, navigate }) {
       <section className="overview">
         {[
           ["home", "", "저장한 매물", rooms.length],
-          ["shield", "green", "공식정보 일치", matched],
-          ["book", "amber", "추가 확인 필요", rooms.length - matched],
+          ["shield", "green", "시연 대조 일치", matched],
+          ["book", "amber", "임시 저장", rooms.filter(r => r.status === "DRAFT").length],
         ].map(([icon, color, title, count]) => (
           <div key={title}>
             <span className={`metric-icon ${color}`}>
@@ -73,6 +73,7 @@ export default function RoomsPage({ onAdd, onDetail, navigate }) {
           <div className="tabs">
             {[
               ["all", "전체 매물"],
+              ["draft", "임시 저장"],
               ["match", "정보 일치"],
               ["check", "확인 필요"],
             ].map(([value, label]) => (
