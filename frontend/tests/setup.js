@@ -15,6 +15,7 @@ Object.defineProperty(window, "localStorage", {
 });
 beforeEach(() => {
   localStorage.clear();
+  window.sessionStorage.clear();
   history.replaceState(null, "", "/#rooms");
 });
 afterEach(() => {

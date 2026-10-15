@@ -8,7 +8,7 @@ export const navigation = [
   ["visits", "book", "방문 체크리스트"],
   ["community", "review", "커뮤니티"],
 ];
-export default function Layout({ page, onGuide, children }) {
+export default function Layout({ page, onGuide, demoUser, onLogout, children }) {
   const { rooms, dataMode } = useRooms();
   const section = page.startsWith("post/") ? "community" : page.split("/")[0];
   const title = { login: "로그인", signup: "회원가입" }[section] || navigation.find((n) => n[0] === section)?.[2];
@@ -61,10 +61,10 @@ export default function Layout({ page, onGuide, children }) {
           </button>
         </div>
         <div className="profile">
-          <div className="avatar">나</div>
+          <div className="avatar">{demoUser?.name.slice(-3, -2) || "나"}</div>
           <div>
-            <strong>둘러보는 중</strong>
-            <small>{dataMode === "api" ? "서버 저장 모드" : "브라우저에만 저장됩니다"}</small>
+            <strong>{demoUser?.name || "둘러보는 중"}</strong>
+            <small>{demoUser ? "공용 시연 데이터 사용 중" : dataMode === "api" ? "서버 저장 모드" : "브라우저에만 저장됩니다"}</small>
           </div>
           <span className="demo-dot" />
         </div>
@@ -77,8 +77,13 @@ export default function Layout({ page, onGuide, children }) {
           </div>
           <div className="header-actions">
             <span className="demo-badge">{dataMode === "api" ? "SERVER" : "화면 시연"}</span>
-            <a href="#login" aria-current={section === "login" ? "page" : undefined}>로그인</a>
-            <a href="#signup" className="header-signup" aria-current={section === "signup" ? "page" : undefined}>회원가입</a>
+            {demoUser ? <>
+              <span className="badge muted">{demoUser.role === "ADMIN" ? "관리자 · 시연" : "일반 사용자 · 시연"}</span>
+              <button className="text-button" onClick={onLogout}>로그아웃</button>
+            </> : <>
+              <a href="#login" aria-current={section === "login" ? "page" : undefined}>로그인</a>
+              <a href="#signup" className="header-signup" aria-current={section === "signup" ? "page" : undefined}>회원가입</a>
+            </>}
           </div>
         </header>
         <div className="content">{children}</div>

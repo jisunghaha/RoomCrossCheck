@@ -13,9 +13,11 @@ import HomePage from "../features/home/pages/HomePage.jsx";
 import AuthPage from "../features/auth/pages/AuthPage.jsx";
 import RegisterRoomPage from "../features/listing/pages/RegisterRoomPage.jsx";
 import CommunityPage, { CommunityPostPage } from "../features/community/pages/CommunityPage.jsx";
+import { useDemoAuth } from "../features/auth/model/useDemoAuth.js";
 export default function App() {
   const [page, navigate] = useHashRoute();
   const { rooms, deleteRoom, toast, loading, loadError, saving, reload, dataMode } = useRooms();
+  const demoAuth = useDemoAuth(dataMode === "local");
   const [modal, setModal] = useState(null),
     [visitRoom, setVisitRoom] = useState(null);
   const close = () => setModal(null),
@@ -28,9 +30,9 @@ export default function App() {
   return (
     <>
       <fieldset disabled={saving} className="data-operation-boundary" aria-busy={saving}>
-      <Layout page={page} onGuide={() => setModal({ type: "guide" })}>
+      <Layout page={page} onGuide={() => setModal({ type: "guide" })} demoUser={demoAuth.user} onLogout={() => { demoAuth.logout(); navigate("home"); }}>
         {page === "home" && <HomePage navigate={navigate} />}
-        {["login", "signup"].includes(page) && <AuthPage key={page} mode={page} navigate={navigate} />}
+        {["login", "signup"].includes(page) && <AuthPage key={page} mode={page} navigate={navigate} demoEnabled={dataMode === "local"} onDemoLogin={demoAuth.login} />}
         {(page === "register" || page.startsWith("register/")) && <RegisterRoomPage key={page} room={rooms.find(r => r.id === page.split("/")[1])} navigate={navigate} />}
         {(page === "community" || page.startsWith("community/")) && <CommunityPage key={page} tab={page.split("/")[1] || "notice"} navigate={navigate} onAddReview={() => setModal({ type: "review" })} />}
         {page.startsWith("post/") && <CommunityPostPage id={page.split("/")[1]} navigate={navigate} />}
