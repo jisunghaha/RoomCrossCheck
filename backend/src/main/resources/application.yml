@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: roomcrosscheck-backend
+
+server:
+  # 로컬 실행 시 이 PC에서만 접속할 수 있도록 루프백 주소에 바인딩한다.
+  address: 127.0.0.1
+  port: ${SERVER_PORT:8080}
+
+# DB 스키마는 Maven의 db 프로필로 별도 관리한다. 서버 실행은 DB를 요구하지 않는다.
+# 업무 기능에서 사용할 MySQL 연결 설정은 해당 기능 구현 시 추가한다.
+# 실제 MySQL·Google 인증의 비밀값은 서버 환경변수로 관리한다.

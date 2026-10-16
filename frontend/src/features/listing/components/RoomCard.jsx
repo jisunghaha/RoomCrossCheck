@@ -1,0 +1,85 @@
+import { useRooms } from "../../../app/state/RoomContext.jsx";
+import { money } from "../../../shared/lib/money.js";
+import { audit } from "../../crosscheck/domain/audit.js";
+import { statistics } from "../../review/domain/statistics.js";
+import { Icon } from "../../../shared/ui/UI.jsx";
+import { RoomScene } from "./RoomScene.jsx";
+import { AuditBadge } from "../../crosscheck/components/AuditBadge.jsx";
+export default function RoomCard({ room: r, onDetail }) {
+  const { reviews, selected, toggleSelected } = useRooms();
+  const a = audit(r),
+    s = statistics(reviews, r.building),
+    picked = selected.includes(r.id);
+  return (
+    <article className={`room-card ${picked ? "picked" : ""}`}>
+      <div className="card-image">
+        <RoomScene theme={r.theme} />
+        <label className="pick">
+          <input
+            type="checkbox"
+            checked={picked}
+            disabled={r.status === "DRAFT"}
+            onChange={() => toggleSelected(r.id)}
+            aria-label={`${r.name} 비교 선택`}
+          />
+          <span>{r.status === "DRAFT" ? "확정 후 비교" : "비교 선택"}</span>
+        </label>
+        <AuditBadge room={r} />
+      </div>
+      <div className="card-body">
+        <div className="location">{r.address}</div>
+        <button className="card-title" onClick={() => onDetail(r.id)}>
+          {r.name}
+          <Icon name="arrow" />
+        </button>
+        <div className="price">
+          {money(r.deposit)}
+          <span>/</span>
+          {money(r.rent)}
+          <small>보증금 / 월세</small>
+        </div>
+        <div className="room-meta">
+          {r.area ?? "—"}㎡ · {r.areaType || "미상"} · {r.floor ?? "—"}층{" "}
+          <span>관리비 {money(r.fee)}</span>
+        </div>
+        <div className="tags">
+          {r.tags.map((t) => (
+            <span key={t}>{t}</span>
+          ))}
+        </div>
+        <div className="card-info">
+          <div>
+            <span>공식정보 일치율</span>
+            <strong
+              className={
+                a.rate === 100
+                  ? "green-text"
+                  : a.rate != null
+                    ? "amber-text"
+                    : ""
+              }
+            >
+              {a.rate == null ? "—" : `${a.rate}%`}
+              <small>{a.count ? ` ${a.count}개 항목` : " 미실시"}</small>
+            </strong>
+          </div>
+          <div>
+            <span>거주 후기</span>
+            <strong>
+              {s.count ? (
+                <>
+                  <span className="star">★</span> {s.count}건
+                </>
+              ) : (
+                "아직 없어요"
+              )}
+            </strong>
+          </div>
+        </div>
+        <button className="card-bottom" onClick={() => onDetail(r.id)}>
+          매물 자세히 보기 <Icon name="arrow" />
+        </button>
+      </div>
+    </article>
+  );
+}
