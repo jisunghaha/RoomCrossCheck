@@ -1,5 +1,17 @@
 # SFR-003 검증 기록
 
+최신 후속 검증: **2026-11-02 (UTC)**. 사용자 승인 범위를 Spring Boot 버전 정합성으로 제한하고 `feature/sfr-003-gemini-extraction`에서만 수정했다. 팀 기준 `e367822`과 같은 **Spring Boot 4.1.1** 및 Web MVC starter를 사용하며 Jackson 3 패키지·mapper 생성·reader·예외 처리를 이식했다. 기존 추출 프롬프트·업무 API·DB 엔티티·스키마·Java 21·MySQL 8.4는 변경하지 않았다.
+
+- 변경 전 기존 Java 테스트 **6건**, 변경 후 회귀 테스트를 포함한 **8건**과 clean 패키징이 통과했다. Spring의 실제 Jackson 자동 구성으로 provider/service 주입, 이전 형식 저장 JSON 읽기, AI 값과 확인값 분리, null·0·소수 면적·지하층·ISO 시각의 JSON 왕복을 확인했다. 별도 로컬 HTTP 응답으로 소수 금액·소수 층·잘못된 JSON이 502 오류로 처리되는지도 확인했다.
+- `python scripts/verify-sfr003-local.py` 기본 모드로 **임시 MySQL 8.4 + 현재 Boot 4.1.1 jar + 로컬 추출 응답 서버**를 검증했다. 원본 등록·확정·추출 응답 처리·사용자 확인값 저장·매물 등록과 서버 재시작 후 재조회가 통과했다. null 보증금·0원 관리비·지하층·긴 원문 보존과 잘못된 입력 거부도 통과했다. 각 실행의 로컬 응답은 1회이며 외부 Gemini 생성 요청은 **0건**이다.
+- 처음 사용한 호스트 Java 구성에서는 `release version 21 not supported`로 컴파일하지 못해 기존 Maven/Java 21 컨테이너 빌드로 전환했다. 실제 DB 검증 첫 실행은 서버 시작 오류로 끝났고 그 실행의 서버 상세 로그는 수집되지 않았다. 소스를 추가 변경하지 않고 로그 수집용 임시 사본에서 전체 흐름을 통과한 뒤, 변경하지 않은 원래 검증기로도 전체 흐름을 다시 통과했다. 첫 시작 오류의 원인은 확정하지 않는다.
+- 이 작업에서 만든 임시 MySQL 컨테이너와 임시 볼륨만 검증기가 정리했다. 사용자·팀 DB나 기존 자료는 변경하지 않았다. React/Chromium 흐름·Windows 실행·실제 Gemini·대표 OCR 정확도는 이번 실행 범위에 포함하지 않으며 아래 과거 실행 기록과 구분한다.
+- 다른 브랜치·main의 파일 수정이나 브랜치 병합·rebase·커밋·푸시·PR·팀 메시지 전송은 하지 않았다. 팀 rooms/Flyway/인증 연결은 후속 설계 범위이며 완료로 표시하지 않는다.
+
+호환성 근거: [Spring Boot 4 공식 이행 안내](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide), [Jackson 3 공식 변경 안내](https://github.com/FasterXML/jackson/wiki/Jackson-Release-3.0).
+
+아래는 이전 검증 당시의 이력이다.
+
 최신 후속 검증: **2026-10-16 (Asia/Seoul)**. `image-001-result.json`의 실제 추출값을 로컬 서버에서 **1회 재생**해 Chromium → 일반 Compose Spring Boot → 실제 MySQL의 이미지 업로드·확정·추출 응답 처리·사용자 확인·매물 등록을 검증했다. **이번 후속 작업의 외부 Gemini 호출은 0건**이다. 원래 이미지 생성 요청의 성공 근거와 이번 응답 재생 검증을 구분한다. [재현 방법과 범위](IMAGE_REPLAY.md), [실행 결과](image-001-replay-result.json)를 참고한다.
 
 - 광고 원본 JPEG는 업로드와 재생 서버 도착 시 같은 SHA-256임을 확인했고, 백엔드·MySQL 재시작 후에도 업로드 파일 해시가 유지됐다. 광고 글·주소 힌트는 비워 두었다.
@@ -160,3 +172,23 @@ python scripts/verify-sfr003-local.py
 - 계약·검증·평가 자료: `README.md`, `API_HANDOFF.md`, `docs/sfr003/VALIDATION.md`, `docs/sfr003/evaluation-20-template.csv`, `docs/sfr003/smoke-002-result.json`부터 `docs/sfr003/smoke-006-result.json`.
 
 후속 추가·수정: `backend/Dockerfile`, `backend/docker-entrypoint.sh`, `scripts/dev-up.sh`, `scripts/prepare-java-runtime.py`, `scripts/verify-sfr003-browser.py`, `scripts/verify-sfr003-browser.mjs`, `scripts/check-sfr003-evaluation.py`, `tests/java-runtime.test.py`, `tests/evaluation-readiness.test.py`, `compose.yaml`, `vite.config.js`, `package.json`, `package-lock.json`, `.gitignore`, 위 문서와 `EVALUATION_INPUTS.md`, `browser-flow-result.json`, `evaluation-readiness.json`.
+
+## 2026-11-03 광고–최종 매물 연결 검증
+
+범위: SFR-003의 별도 소스 복사본. 기존 미커밋 Boot 4.1.1 작업을 포함하며 기존 작업 폴더는 보존했다.
+
+- 백엔드: 16 tests, failures 0, errors 0, skipped 0; clean package 성공. 신규 ListingService 검증 8건 포함.
+- 프론트: 26 tests 통과, production build 성공. 광고 ID 전달·수정 시 원본 교체 방지·409 안내와 기존 등록 흐름 확인.
+- 실제 MySQL 8.4: 구 버전 서버로 만든 직접 입력 매물이 새 스키마에서도 유지되고 advertisementId=null인 것을 확인.
+- 실제 Chromium: 광고 원본 임시 저장 → 확정 → 로컬 추출 모형 → 확인값 저장 → 공용 폼 수정 → 최종 저장 → 새로고침. 최종 확인 전 매물 0건, 확정 후 광고 ID 연결 1건.
+- 잘못된 UUID 400, 없는 원본 404, 미확인 광고 4개 상태와 원본 교체 409 확인. 직접 입력·기존 PATCH 호환 확인.
+- 같은 광고의 동시 POST 6건 결과: 201 1건, 409 5건. DB 직접 중복 INSERT와 참조 중인 광고 DELETE도 UNIQUE·FK로 거부됨.
+- 서버 재시작 전후 매물 응답과 advertisementId 일치. AI 월세 420000, 광고 확인값 430000, 최종 폼 수정값은 각각 별도 보존됨.
+- 외부 Gemini 호출 0건. 실제 OCR 정확도·실제 인증·공유 DB 적용을 검증한 결과가 아니다.
+- 검증에 사용한 임시 MySQL 컨테이너와 볼륨은 삭제했고 서버·Vite를 종료했다.
+
+이번 실행의 화면·JSON·로그는 `/workspace/reports/advertisement-link-20261103/`에 보관한다. 위 과거 검증 기록은 당시 구현 범위의 기록으로 유지한다.
+
+### 후속 승인: 기존 SFR-003 작업 폴더 반영
+
+2026-11-03 사용자 승인으로 검증된 광고–매물 연결 패치를 기존 `feature/sfr-003-gemini-extraction` 작업 폴더에 적용했다. 적용 전 소스·미커밋 변경을 백업하고 해시를 대조했다. 기존 Boot 4.1.1 코드 변경은 동일하게 보존했고 기존 문서에는 설명만 추가했다. 적용된 작업 폴더에서 백엔드 테스트 16건·프론트 테스트 26건·실행 설정 테스트 6건과 Java/프론트 빌드를 다시 통과했다. DB·브라우저 검증은 앞 절의 동일 코드 결과를 사용하며, 이번 반영 단계에서 DB 서버나 Gemini는 호출하지 않았다. HEAD·모든 로컬 브랜치 참조는 유지했고 커밋·푸시는 하지 않았다.

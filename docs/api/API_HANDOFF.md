@@ -123,3 +123,18 @@ Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED
 신규 등록은 frontend/src/features/listing/pages/RegisterRoomPage.jsx의 #register에서 진행합니다. 기존 신규 등록 모달을 병행하지 않고, 직접 입력과 서버 광고 확인 값이 같은 RoomForm의 onPreview 계약으로 최종 확인에 전달됩니다. 최종 확정 저장에서만 현재 매물 adapter를 호출합니다. 기존 매물 수정 모달은 유지합니다.
 
 이 변경은 /rooms 업무 API나 DRAFT 매물 임시 저장을 새로 구현한 것이 아닙니다. 현재 listing-api는 종전 /listings 저장을 사용하고, 광고 임시 저장·추출·확인은 종전 /advertisements를 사용합니다. 임의 사용자 ID·가짜 인증·DB 자동 이관은 추가하지 않았습니다.
+
+## 2026-11-03 개발용 광고–매물 연결 계약
+
+아래 내용은 `/api/listings`에만 적용한다. 위 팀 `/rooms` 계약은 변경하지 않는다.
+
+- POST의 선택 필드 `advertisementId`는 광고 UUID 문자열이다. 생략 또는 null이면 직접 입력이다.
+- 광고 ID 형식 오류는 400, 없는 광고는 404, 미확인 광고·확인값이 없는 광고·이미 등록된 광고는 409다. 광고 상태는 REVIEWED이고 reviewedJson이 저장돼 있어야 한다.
+- 성공은 기존대로 201이며 응답과 이후 GET에 `advertisementId`가 포함된다. 기존 직접 입력 매물은 null이다.
+- 광고별 행 잠금 안에서 중복을 검사하고 저장한다. `listings.advertisement_id`의 UNIQUE·FK도 중복과 없는 원본 연결을 제한한다.
+- 응답 유실 뒤 재시도해도 새 매물을 만들지 않고 409를 반환한다. 사용자는 목록에서 이미 저장된 매물을 확인한다. 서로 다른 최종 입력을 조용히 덮어쓰지 않는다.
+- PATCH에서 advertisementId를 생략/null로 보내도 기존 연결을 유지한다. 다른 광고 ID로 바꾸거나 직접 입력 매물에 광고를 뒤늦게 붙이는 요청은 409다.
+- 광고 원본·AI 결과·광고 확인값은 매물 폼의 수정값으로 덮어쓰지 않는다. 광고 엔티티나 내부 저장 키를 매물 응답에 포함하지 않는다.
+- 현재 로그인·광고 소유권은 미구현이다. 이 연결을 실제 사용자 소유권 검증으로 해석하지 않는다.
+
+기존 로컬 개발 DB는 JPA update 방식이며 이 보완도 별도 임시 DB에서 검증했다. 팀 V1 수정·기존 DB 이관·자동 자료 역추적은 수행하지 않았다. 팀 DB로 통합할 때는 별도 migration과 API 합의가 필요하다.

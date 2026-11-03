@@ -123,7 +123,10 @@ export function createListingRepository({ baseUrl = "/api", fetchImpl = globalTh
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
     } catch { throw new Error("매물 서버에 연결하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요."); }
-    if (!response.ok) throw new Error(`매물 서버 요청에 실패했어요. (${response.status})`);
+    if (!response.ok) {
+      if (response.status === 409) throw new Error("이미 등록된 광고이거나 광고 확인이 필요해요. 목록과 광고 확인 상태를 확인해 주세요.");
+      throw new Error(`매물 서버 요청에 실패했어요. (${response.status})`);
+    }
     return response.status === 204 ? undefined : response.json();
   }
   return {
@@ -137,6 +140,7 @@ export function createListingRepository({ baseUrl = "/api", fetchImpl = globalTh
     },
     async saveRoom(values, id) {
       const payload = Object.fromEntries(["name", "address", "deposit", "rent", "fee", "area", "areaType", "floor", "original"].map(key => [key, values[key] ?? null]));
+      if (!id && values.advertisementId != null) payload.advertisementId = values.advertisementId;
       return asRoom(room({ ...await request(id ? `/${encodeURIComponent(id)}` : "", id ? "PATCH" : "POST", payload), tags: [] }));
     },
     async deleteRoom(id) {

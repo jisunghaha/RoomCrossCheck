@@ -1,6 +1,8 @@
 # 백엔드 현재 구현 범위
 
-Java 21·Spring Boot·MySQL 로컬 개발 API입니다. 루트의 `scripts/build-backend.sh`가 Maven clean test package를 실행하고 `scripts/dev-up.sh`가 DB와 백엔드를 기동합니다. 공개 CA·프록시는 런타임에서 적용합니다.
+Java 21·Spring Boot 4.1.1·MySQL 8.4 로컬 개발 API입니다. 루트의 `scripts/build-backend.sh`가 Maven clean test package를 실행하고 `scripts/dev-up.sh`가 DB와 백엔드를 기동합니다. 공개 CA·프록시는 런타임에서 적용합니다.
+
+팀의 Spring Boot 기준에 맞춰 Web MVC starter와 Jackson 3을 사용합니다. 기존 추출 JSON·API 필드·원 단위·null/0 구분은 유지합니다. 2026-11-02에 백엔드 테스트 8건과 clean 패키징, 임시 MySQL에서 원본 등록·추출 응답 처리·확인값 저장·서버 재시작 후 재조회를 검증했습니다. [검증 기록](../docs/sfr003/VALIDATION.md)을 참고하세요.
 
 패키지 배치는 팀의 기능별 구조에 맞췄습니다.
 
@@ -18,3 +20,7 @@ Java 21·Spring Boot·MySQL 로컬 개발 API입니다. 루트의 `scripts/build
 팀의 V1 SQL을 복사·수정·적용하지 않았으며 기존 `listings`·`advertisements` 자료를 임의로 `rooms`에 이관하지 않습니다. 사용자 ID를 요청·엔티티에 임의로 추가하지 않았고 인증을 흉내 내지 않았습니다. 기존 API는 로그인 미연결의 로컬 개발 범위입니다.
 
 패키지를 바꾼 뒤 이전 class가 jar에 남으면 같은 엔티티·컨트롤러가 중복 스캔될 수 있어 clean 빌드를 사용합니다. API 응답과 원 단위/null/0 검증은 기존 테스트·MySQL·브라우저 검증으로 확인합니다.
+
+## 2026-11-03 광고–매물 연결
+
+ListingService가 최종 생성 시 선택 advertisementId의 광고를 잠그고 REVIEWED·확인값·중복 여부를 검증한다. listings.advertisement_id에 nullable UNIQUE와 advertisements FK를 두며, 수정에서는 원본 연결을 보존한다. 기존 직접 입력·이전 PATCH 요청도 유지한다. 적용 범위는 기존 개발용 JPA 모델이며 팀 Flyway V1과 rooms 모델은 변경하지 않는다. 테스트는 16건 통과했고 별도 실제 MySQL에서 기존 매물·동시 등록·재시작 보존을 검증했다.

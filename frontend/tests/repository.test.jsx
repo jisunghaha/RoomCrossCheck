@@ -68,3 +68,23 @@ test("listing bridge loads only DB rooms and saves through listings API", async 
   expect(fetchImpl.mock.calls[1][0]).toBe("/api/listings");
   expect(fetchImpl.mock.calls[1][1]).toMatchObject({ method: "POST" });
 });
+
+test("listing source is sent only for creation and cannot be replaced through editing", async () => {
+  const { createListingRepository } = await import("../src/app/data/repository.js");
+  const saved = { id: "linked-room", building: "building", advertisementId: "source-ad" };
+  const fetchImpl = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => saved });
+  const repo = createListingRepository({ fetchImpl });
+  await repo.saveRoom({ name: "확인 매물", address: "가상 주소", advertisementId: "source-ad", userId: "forged" });
+  expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toMatchObject({ advertisementId: "source-ad" });
+  expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).not.toHaveProperty("userId");
+  await repo.saveRoom({ name: "수정", advertisementId: "replacement-ad" }, saved.id);
+  expect(JSON.parse(fetchImpl.mock.calls[1][1].body)).not.toHaveProperty("advertisementId");
+  await repo.saveRoom({ name: "직접 입력", advertisementId: null });
+  expect(JSON.parse(fetchImpl.mock.calls[2][1].body)).not.toHaveProperty("advertisementId");
+});
+
+test("duplicate source registration tells the user to check the saved listing", async () => {
+  const { createListingRepository } = await import("../src/app/data/repository.js");
+  const repo = createListingRepository({ fetchImpl: async () => ({ ok: false, status: 409 }) });
+  await expect(repo.saveRoom({ advertisementId: "source-ad" })).rejects.toThrow("이미 등록된 광고");
+});

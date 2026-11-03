@@ -3,6 +3,7 @@ package com.roomcrosscheck.listing.domain;
 import com.roomcrosscheck.listing.dto.ListingRequest;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -23,11 +24,20 @@ public class Listing {
     @Column(nullable = false) public LocalDate createdAt;
     @Column(nullable = false) public String building;
 
+    @Column(name = "advertisement_id", length = 36, unique = true)
+    public String advertisementId;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "advertisement_id", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(name = "fk_listings_advertisement"))
+    private Advertisement advertisement;
+
     protected Listing() {}
     public Listing(ListingRequest r) {
         id = UUID.randomUUID().toString();
         building = UUID.randomUUID().toString();
         createdAt = LocalDate.now();
+        advertisementId = r.advertisementId();
         update(r);
     }
     public void update(ListingRequest r) {

@@ -5,7 +5,7 @@ import com.roomcrosscheck.extraction.dto.ExtractionResult;
 import com.roomcrosscheck.listing.domain.Advertisement;
 import com.roomcrosscheck.listing.repository.AdvertisementRepository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,7 +35,7 @@ class ExtractionServiceTest {
         when(provider.extract(eq(ad.originalText), isNull(), isNull(),
                 argThat(bytes -> java.util.Arrays.equals(bytes, new byte[]{1, 2, 3})), eq("image/png")))
             .thenReturn(new ExtractionResult("보증금 500만원", null, 5_000_000L, null, null, null, null));
-        var service = new ExtractionService(repo, provider, new ObjectMapper(), directory.toString());
+        var service = new ExtractionService(repo, provider, JsonMapper.builder().build(), directory.toString());
 
         var ready = service.extract(ad.id);
         assertEquals(Advertisement.Status.EXTRACTION_READY, ready.status());
@@ -62,7 +62,7 @@ class ExtractionServiceTest {
         when(provider.extract(any(), any(), any(), any(), any()))
             .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS, "한도 초과"))
             .thenReturn(new ExtractionResult("월세 42만원", null, null, 420_000L, null, null, null));
-        var service = new ExtractionService(repo, provider, new ObjectMapper(), directory.toString());
+        var service = new ExtractionService(repo, provider, JsonMapper.builder().build(), directory.toString());
         assertThrows(ResponseStatusException.class, () -> service.extract(ad.id));
         assertEquals(Advertisement.Status.EXTRACTION_FAILED, ad.status);
         assertEquals("월세 42만원", ad.originalText);

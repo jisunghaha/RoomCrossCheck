@@ -29,7 +29,7 @@ export default function RegisterRoomPage({ navigate }) {
     preview(input, 2);
   }
   async function save() {
-    if (await saveRoom(values)) navigate("rooms");
+    if (await saveRoom(advertisementId ? { ...values, advertisementId } : values)) navigate("rooms");
   }
 
   return <>

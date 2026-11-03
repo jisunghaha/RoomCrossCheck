@@ -1,6 +1,6 @@
 package com.roomcrosscheck.extraction.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,8 +12,35 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GeminiExtractionProviderTest {
+    @Test void rejectsFractionalMoneyFloorAndMalformedJsonAsBadGateway() throws Exception {
+        var mapper = JsonMapper.builder().build();
+        var output = new AtomicReference<String>();
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1beta/models/local-stub:generateContent", exchange -> {
+            exchange.getRequestBody().readAllBytes();
+            var root = mapper.createObjectNode();
+            root.putArray("candidates").addObject().putObject("content")
+                .putArray("parts").addObject().put("text", output.get());
+            byte[] bytes = mapper.writeValueAsBytes(root);
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+        try {
+            var provider = new GeminiExtractionProvider(mapper, "local-test-key", "local-stub",
+                "http://127.0.0.1:" + server.getAddress().getPort() + "/v1beta", true);
+            for (String invalid : new String[]{"{\"depositWon\":1.5}", "{\"floor\":2.5}", "{invalid"}) {
+                output.set(invalid);
+                var error = assertThrows(ResponseStatusException.class,
+                    () -> provider.extract("광고", null, null, null, null));
+                assertEquals(502, error.getStatusCode().value());
+            }
+        } finally { server.stop(0); }
+    }
+
     @Test void disabledProviderDoesNotCallTheNetwork() {
-        var provider = new GeminiExtractionProvider(new ObjectMapper(), "", "gemini-2.5-flash",
+        var provider = new GeminiExtractionProvider(JsonMapper.builder().build(), "", "gemini-2.5-flash",
             "http://127.0.0.1:1", false);
         assertThrows(ResponseStatusException.class, () -> provider.extract("광고", null, null, null, null));
     }
@@ -35,12 +62,12 @@ class GeminiExtractionProviderTest {
         });
         server.start();
         try {
-            var provider = new GeminiExtractionProvider(new ObjectMapper(), "test-key", "gemini-2.5-flash",
+            var provider = new GeminiExtractionProvider(JsonMapper.builder().build(), "test-key", "gemini-2.5-flash",
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/v1beta", true);
             var result = provider.extract("", null, null, new byte[]{1, 2, 3}, "image/png");
             assertEquals("test-key", key.get());
             assertEquals(420_000L, result.monthlyRentWon());
-            var request = new ObjectMapper().readTree(requestBody.get());
+            var request = JsonMapper.builder().build().readTree(requestBody.get());
             assertEquals("AQID", request.path("contents").path(0).path("parts").path(1)
                 .path("inline_data").path("data").asText());
         } finally { server.stop(0); }

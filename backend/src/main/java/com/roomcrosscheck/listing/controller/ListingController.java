@@ -3,6 +3,7 @@ package com.roomcrosscheck.listing.controller;
 import com.roomcrosscheck.listing.domain.Listing;
 import com.roomcrosscheck.listing.dto.ListingRequest;
 import com.roomcrosscheck.listing.repository.ListingRepository;
+import com.roomcrosscheck.listing.service.ListingService;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
@@ -15,7 +16,11 @@ import java.util.List;
 @RequestMapping("/api/listings")
 public class ListingController {
     private final ListingRepository repository;
-    public ListingController(ListingRepository repository) { this.repository = repository; }
+    private final ListingService service;
+    public ListingController(ListingRepository repository, ListingService service) {
+        this.repository = repository;
+        this.service = service;
+    }
 
     @GetMapping public List<Listing> all() {
         return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -23,12 +28,10 @@ public class ListingController {
     @GetMapping("/{id}") public Listing one(@PathVariable String id) { return find(id); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public Listing create(@Valid @RequestBody ListingRequest request) {
-        return repository.save(new Listing(request));
+        return service.create(request);
     }
     @PatchMapping("/{id}") public Listing update(@PathVariable String id, @Valid @RequestBody ListingRequest request) {
-        Listing listing = find(id);
-        listing.update(request);
-        return repository.save(listing);
+        return service.update(id, request);
     }
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {

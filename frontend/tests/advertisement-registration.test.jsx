@@ -71,7 +71,7 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
   await user.click(dialog.getByRole("button", { name: "확정 저장" }));
   expect(await screen.findByRole("button", { name: "가상 확인 매물" })).toBeInTheDocument();
   const payload = JSON.parse(requests.filter(([, o]) => o.method === "POST").at(-1)[1].body);
-  expect(payload).toMatchObject({ deposit: null, rent: 123456, fee: 0, floor: -20, area: 21, areaType: "미상", original: "가상 광고 원문" });
+  expect(payload).toMatchObject({ advertisementId: draft.id, deposit: null, rent: 123456, fee: 0, floor: -20, area: 21, areaType: "미상", original: "가상 광고 원문" });
   expect(payload).not.toHaveProperty("official");
   expect(payload).not.toHaveProperty("userId");
   expect(requests.some(([url]) => url.endsWith("/extract"))).toBe(false);

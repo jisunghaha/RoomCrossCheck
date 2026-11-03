@@ -2,10 +2,11 @@ package com.roomcrosscheck.extraction.client;
 
 import com.roomcrosscheck.extraction.dto.ExtractionResult;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -95,14 +96,14 @@ public class GeminiExtractionProvider implements ExtractionProvider {
             JsonNode root = mapper.readTree(response.body());
             JsonNode content = root.path("candidates").path(0).path("content").path("parts").path(0).path("text");
             if (!content.isTextual()) throw new IOException("Missing Gemini output");
-            return mapper.copy().disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
-                .readValue(content.asText(), ExtractionResult.class);
+            return mapper.readerFor(ExtractionResult.class).without(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+                .readValue(content.asString());
         } catch (ResponseStatusException e) {
             throw e;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Gemini 요청이 중단됐습니다.");
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IOException | JacksonException | IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Gemini 응답을 처리하지 못했습니다.");
         }
     }
