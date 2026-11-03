@@ -105,7 +105,7 @@ multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최�
 
 추출은 `DRAFT`에서 요청하면 409입니다. `EXTRACTION_PENDING` 또는 `EXTRACTION_FAILED`에서 명시적으로 호출하며, 같은 광고의 중복 진행 요청은 409입니다. 이미 `EXTRACTION_READY`면 저장된 결과를 돌려주고 API를 다시 호출하지 않습니다. 키가 비어 있거나 `GEMINI_ENABLED=false`면 503으로 거부하며 상태를 바꾸지 않습니다. Gemini 한도 초과는 429, 그 밖의 원격 응답·파싱 실패는 502로 표시하고 `EXTRACTION_FAILED`로 저장합니다. 재시도는 다시 `extract`를 호출합니다.
 
-추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null), `areaType`(전용·공급·미상)입니다. 확인 요청은 이 여덟 필드를 JSON 본문에 담습니다. 기존 요청이나 저장 JSON에서 areaType이 생략되거나 null이면 미상으로 읽으며 기존 JSON을 자동 수정하지 않습니다. 허용하지 않는 종류는 확인 요청에서 400, 공급자 결과에서 502로 거부합니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
+추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null), `areaType`(전용·공급·미상), `options`(문자열 배열 또는 null)입니다. 확인 요청은 이 아홉 필드를 JSON 본문에 담습니다. 기존 요청이나 저장 JSON에서 areaType이 생략되거나 null이면 미상으로 읽으며 기존 JSON을 자동 수정하지 않습니다. 허용하지 않는 종류는 확인 요청에서 400, 공급자 결과에서 502로 거부합니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
 
 Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 실제 생성 응답 HTTP 200과 정답 6개 필드 일치를 확인한 `gemini-3.5-flash-lite`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 기존 2.5 Flash·2.5 Flash Lite는 신규 사용자 지원 종료로 404를 반환했고, 3.8 Flash·Flash Latest는 혼잡으로 503을 반환했습니다. 모델 목록에 존재하는 것과 생성 가능 여부는 다릅니다. 무료 등급·해당 모델의 사용 가능 여부를 확인하고, 불확실하면 호출하지 않습니다. 현재 로그인·소유권 검증이 없어 이 API도 로컬 개발 전용입니다. 실제 호출 기록과 가짜 서버 검증 범위는 [SFR-003 검증 기록](../sfr003/VALIDATION.md)을 참고하세요.
 
@@ -144,3 +144,16 @@ Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED
 계획서 SFR-003·004의 면적 종류 요구사항을 반영했다. Gemini 프롬프트는 반환한 면적과 연결된 전용·공급 구분이 원문에 명시된 경우만 사용하고 불명확하면 미상으로 반환하도록 요구한다. 이 프롬프트 지침이 실제 광고에서 지켜지는 정확도는 별도 검증 대상이다.
 
 공급자 DTO → 광고 추출 JSON → 사용자 확인 JSON → 매물 입력 폼 → 최종 listings.areaType으로 이어진다. 각 단계에서 사용자가 변경한 값은 이전 단계의 원본을 덮어쓰지 않는다. 기존 면적 숫자·금액·null/0·층수 계약과 URL은 유지한다. 추가 DB 컬럼·migration은 없다. /rooms와 팀 DB의 EXCLUSIVE/SUPPLY/UNKNOWN 규약은 이번 작업에서 변경하지 않는다.
+
+## 옵션 추출·확인·매물 계약 (2026-11-03)
+
+이 절은 개발용 advertisements·listings에만 적용하며 팀 /rooms 계약은 변경하지 않는다.
+
+- options=null 또는 생략: 옵션 미확인. options=[]: 옵션 없음으로 확인. 품목이 있으면 문자열 배열로 보낸다. 풀옵션을 가전 목록으로 확장하거나 광고에서 제외한 품목을 포함하지 않는다.
+- 최대 30개, 항목은 제어문자 없는 1~100자 문자열이다. 바깥 공백과 정확히 같은 중복 항목을 정리한다. 숫자·객체·null 항목·빈 문자열·잘못된 형식이나 크기는 거부한다.
+- 잘못된 공급자 응답은 502·EXTRACTION_FAILED이며 원본은 보존한다. 잘못된 사용자 확인/매물 요청은 400이며 기존 저장값은 유지한다.
+- 추출 JSON·광고 확인 JSON·최종 listings.options는 별도다. 사용자 확인 화면은 마지막 저장값만 매물 폼에 전달하고 최종 폼 수정으로 광고 값을 덮어쓰지 않는다.
+- 기존 광고 JSON에 항목이 없으면 null로 읽으며 저장 JSON을 자동 수정하지 않는다.
+- POST /api/listings에서 생략/null은 null로 저장한다. PATCH에서 생략하면 기존 값을 보존하고, 명시한 null은 미확인으로 변경하며 []는 명시적인 옵션 없음으로 저장한다. 요청의 optionsProvided 필드는 무시하며 옵션 필드의 실제 존재 여부는 서버에서 판단한다.
+- listings.options는 nullable JSON이다. 이전 매물은 null이며, 새 컬럼을 위해 팀 V1·rooms를 수정하지 않는다. 현재 로컬 JPA update와 별개로 실제 기존 DB에 적용하려면 SQL 안내에 따라 백업·대상·컬럼 유무를 확인해야 한다.
+- JSON 응답에는 null/배열을 그대로 반환한다. 브라우저는 옵션을 텍스트로 표시하며 실행 가능한 HTML로 해석하지 않는다. local 모드도 같은 입력을 저장하지만 api(/rooms) 모드의 수정 폼에는 옵션 입력을 추가하지 않았다.

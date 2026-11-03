@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GeminiExtractionProviderTest {
-    @Test void rejectsFractionalMoneyFloorAndMalformedJsonAsBadGateway() throws Exception {
+    @Test void rejectsInvalidNumbersOptionsAndMalformedJsonAsBadGateway() throws Exception {
         var mapper = JsonMapper.builder().build();
         var output = new AtomicReference<String>();
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -30,7 +30,7 @@ class GeminiExtractionProviderTest {
         try {
             var provider = new GeminiExtractionProvider(mapper, "local-test-key", "local-stub",
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/v1beta", true);
-            for (String invalid : new String[]{"{\"depositWon\":1.5}", "{\"floor\":2.5}", "{invalid"}) {
+            for (String invalid : new String[]{"{\"depositWon\":1.5}", "{\"floor\":2.5}", "{invalid", "{\"options\":[123]}", "{\"options\":\"냉장고\"}"}) {
                 output.set(invalid);
                 var error = assertThrows(ResponseStatusException.class,
                     () -> provider.extract("광고", null, null, null, null));

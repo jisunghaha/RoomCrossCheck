@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import OptionsField from "../../../shared/ui/OptionsField.jsx";
+import { parseOptions, optionsText } from "../../../shared/lib/options.js";
 import { reviewedAdvertisementValues } from "../model/reviewedAdvertisement.js";
 
 const labels = {
@@ -8,16 +10,22 @@ const labels = {
 
 function ReviewForm({ draft, busy, onSave }) {
   const result = draft.reviewed || draft.extraction;
+  const [optionText, setOptionText] = useState(() => optionsText(result?.options));
+  const [noOptions, setNoOptions] = useState(() => Array.isArray(result?.options) && result.options.length === 0);
+  const [optionError, setOptionError] = useState("");
   const number = (value) => value === null || value === undefined ? "" : value;
   return <form className="ad-review" onSubmit={event => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const numeric = name => data.get(name) === "" ? null : Number(data.get(name));
+    let options;
+    try { options = parseOptions(optionText, noOptions); setOptionError(""); }
+    catch (cause) { setOptionError(cause.message); return; }
     onSave(draft.id, {
       rawText: data.get("rawText"), address: data.get("address") || null,
       depositWon: numeric("depositWon"), monthlyRentWon: numeric("monthlyRentWon"),
       maintenanceFeeWon: numeric("maintenanceFeeWon"), areaSqm: numeric("areaSqm"), floor: numeric("floor"),
-      areaType: data.get("areaType"),
+      areaType: data.get("areaType"), options,
     });
   }}>
     <p>AI 결과를 원본 광고와 비교하고 틀린 값을 고쳐 주세요. 빈칸은 확인되지 않은 값입니다. 면적 종류가 불명확하면 미상으로 유지해 주세요.</p>
@@ -33,6 +41,8 @@ function ReviewForm({ draft, busy, onSave }) {
       </select></label>
       <label>층수 (지하는 음수)<input name="floor" type="number" min="-20" max="200" step="1" defaultValue={number(result?.floor)} /></label>
     </div>
+    <OptionsField text={optionText} none={noOptions} onTextChange={setOptionText} onNoneChange={setNoOptions} />
+    {optionError && <p role="alert">{optionError}</p>}
     <button className="secondary" type="submit" disabled={busy}>확인한 값 저장</button>
   </form>;
 }

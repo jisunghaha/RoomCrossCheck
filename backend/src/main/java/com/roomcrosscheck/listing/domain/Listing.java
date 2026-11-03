@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "listings")
@@ -20,6 +23,8 @@ public class Listing {
     @Column(precision = 10, scale = 2) public BigDecimal area;
     @Column(length = 10) public String areaType;
     public Integer floor;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json") public List<String> options;
     @Column(length = 10000) public String original;
     @Column(nullable = false) public LocalDate createdAt;
     @Column(nullable = false) public String building;
@@ -44,5 +49,6 @@ public class Listing {
         name = r.name().trim(); address = r.address().trim();
         deposit = r.deposit(); rent = r.rent(); fee = r.fee();
         area = r.area(); areaType = r.areaType(); floor = r.floor(); original = r.original();
+        if (r.optionsProvided()) options = r.options();
     }
 }

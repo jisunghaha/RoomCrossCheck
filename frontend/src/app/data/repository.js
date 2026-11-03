@@ -85,7 +85,7 @@ export function createLocalRepository(storage = window.localStorage) {
     async saveRoom(values, id) {
       const old = state.rooms.find(r => r.id === id);
       const saved = {
-        ...values, id: id || crypto.randomUUID(),
+        ...values, options: Object.hasOwn(values, "options") ? values.options : old?.options ?? null, id: id || crypto.randomUUID(),
         building: old?.address === values.address ? old.building : crypto.randomUUID(),
         tags: old?.tags || ["직접 등록"], theme: old?.theme || "sage", official: null,
         createdAt: old?.createdAt || new Date().toISOString().slice(0, 10),
@@ -113,7 +113,11 @@ export function createLocalRepository(storage = window.localStorage) {
 export function createListingRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, storage = window.localStorage } = {}) {
   const local = createLocalRepository(storage);
   const url = `${baseUrl.replace(/\/$/, "")}/listings`;
-  const asRoom = value => ({ ...value, tags: ["직접 등록"], theme: "sage", official: null, source: "server" });
+  const asRoom = value => {
+    if (value.options != null && (!Array.isArray(value.options) || value.options.length > 30 || value.options.some(item =>
+      typeof item !== "string" || !item.trim() || item.length > 100 || /[\u0000-\u001f\u007f-\u009f]/.test(item)))) throw invalidResponse();
+    return { ...value, options: value.options ?? null, tags: ["직접 등록"], theme: "sage", official: null, source: "server" };
+  };
   async function request(path = "", method = "GET", body) {
     let response;
     try {
@@ -140,6 +144,7 @@ export function createListingRepository({ baseUrl = "/api", fetchImpl = globalTh
     },
     async saveRoom(values, id) {
       const payload = Object.fromEntries(["name", "address", "deposit", "rent", "fee", "area", "areaType", "floor", "original"].map(key => [key, values[key] ?? null]));
+      if (Object.hasOwn(values, "options")) payload.options = values.options;
       if (!id && values.advertisementId != null) payload.advertisementId = values.advertisementId;
       return asRoom(room({ ...await request(id ? `/${encodeURIComponent(id)}` : "", id ? "PATCH" : "POST", payload), tags: [] }));
     },

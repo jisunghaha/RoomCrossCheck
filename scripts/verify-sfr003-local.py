@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTRACTED = {"rawText": "가상 광고", "address": None, "depositWon": None,
-             "monthlyRentWon": 123456, "maintenanceFeeWon": 0, "areaSqm": 20, "floor": -20, "areaType": "미상"}
+             "monthlyRentWon": 123456, "maintenanceFeeWon": 0, "areaSqm": 20, "floor": -20, "areaType": "미상", "options": None}
 stub_calls = 0
 
 

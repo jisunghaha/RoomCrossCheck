@@ -1,3 +1,4 @@
+import { optionsSummary } from "../../../shared/lib/options.js";
 import { useRooms } from "../../../app/state/RoomContext.jsx";
 import { audit, fixedCost, money } from "../../../shared/lib/domain.js";
 import { AuditBadge, RatingGrid, RoomScene } from "../../../shared/ui/UI.jsx";
@@ -24,6 +25,8 @@ export default function RoomDetail({ room: r, onEdit, onDelete, onVisit }) {
           <strong>{money(fixedCost(r))}</strong>
         </div>
       </div>
+      <h3>옵션</h3>
+      <p>{optionsSummary(r.options)}</p>
       <h3>
         광고 · 공식정보 대조 <span className="badge muted">{r.official ? "가상 공식정보" : "공식 조회 미실시"}</span>
       </h3>

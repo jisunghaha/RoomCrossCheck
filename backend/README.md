@@ -28,3 +28,7 @@ ListingService가 최종 생성 시 선택 advertisementId의 광고를 잠그�
 ## 면적 종류 호환성
 
 ExtractionResult에 areaType(전용·공급·미상)을 추가했다. 구버전 추출·확인 JSON의 항목 생략/null은 미상으로 읽으며 저장 JSON을 일괄 갱신하지 않는다. 공급자의 허용 밖 값은 502, 사용자 확인 요청의 허용 밖 값은 400으로 거부한다. 기존 광고 JSON 컬럼과 매물 areaType 컬럼을 사용하며 DB 구조는 바꾸지 않는다.
+
+## 옵션 배열 저장
+
+ExtractionResult.options와 listings.options(JSON)을 연결했다. 공통 역직렬화에서 문자열 배열·크기·길이·제어문자를 검증하고 공백·중복을 정리한다. ListingRequest는 기존 생성자와 접근자를 유지하면서 setter 호출 여부로 생략과 명시적 null을 구분한다. 이 구분 때문에 DTO를 record에서 클래스로 변경했으며 기존 검증 제약은 동일하다. 기존 PATCH의 옵션 생략은 저장값을 보존한다. 적용 전 절차는 docs/sfr003/sql/README.md를 참조한다.

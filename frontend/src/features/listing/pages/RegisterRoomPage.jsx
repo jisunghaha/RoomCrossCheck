@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRooms } from "../../../app/state/RoomContext.jsx";
 import { Field, PageHeading } from "../../../shared/ui/UI.jsx";
+import { optionsSummary } from "../../../shared/lib/options.js";
 import { money } from "../../../shared/lib/domain.js";
 import AdDraftPanel from "../../extraction/components/AdDraftPanel.jsx";
 import RoomForm from "../components/RoomForm.jsx";
@@ -81,7 +82,8 @@ export default function RegisterRoomPage({ navigate }) {
         {[["매물 이름", values.name], ["주소", values.address], ["보증금", money(values.deposit)],
           ["월세", money(values.rent)], ["관리비", money(values.fee)],
           ["면적", values.area == null ? "정보 없음" : `${values.area}㎡ · ${values.areaType}`],
-          ["층수", values.floor == null ? "정보 없음" : `${values.floor}층`]].map(([label, value]) =>
+          ["층수", values.floor == null ? "정보 없음" : `${values.floor}층`],
+          ["옵션", optionsSummary(values.options)]].map(([label, value]) =>
           <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
       <p className="helper">{dataMode === "local" ? "이 브라우저에 저장합니다." : "연결된 매물 서버에 저장합니다."} 광고 원본·AI 추출값·광고 확인 값은 이 폼의 수정과 별도로 유지합니다.</p>

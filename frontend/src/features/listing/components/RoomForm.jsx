@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useRooms } from "../../../app/state/RoomContext.jsx";
+import OptionsField from "../../../shared/ui/OptionsField.jsx";
+import { parseOptions, optionsText } from "../../../shared/lib/options.js";
 import { Field } from "../../../shared/ui/UI.jsx";
 export default function RoomForm({ room, initialValues, onPreview, heading, helperText, onDone, onCancel }) {
-  const { saveRoom } = useRooms();
+  const { saveRoom, dataMode } = useRooms();
   const initial = room || initialValues;
   const [values, setValues] = useState(() => ({
     name: initial?.name || "",
@@ -15,6 +17,8 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
     floor: initial?.floor ?? "",
     original: initial?.original || "",
   }));
+  const [optionText, setOptionText] = useState(() => optionsText(initial?.options));
+  const [noOptions, setNoOptions] = useState(() => Array.isArray(initial?.options) && initial.options.length === 0);
   const [error, setError] = useState("");
   const bind = (key) => ({
     name: key,
@@ -33,6 +37,7 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
         fee: values.fee === "" ? null : Math.round(number("fee", 10000)),
         area: number("area"),
         floor: number("floor"),
+        ...(dataMode === "api" ? {} : { options: parseOptions(optionText, noOptions) }),
       };
   }
   async function submit(e) {
@@ -41,7 +46,8 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
       setError("이름과 주소를 입력해 주세요.");
       return;
     }
-    const input = inputValues();
+    let input;
+    try { input = inputValues(); } catch (cause) { setError(cause.message); return; }
     if (onPreview) { onPreview(input); return; }
     const saved = await saveRoom(input, room?.id);
     if (saved) onDone();
@@ -108,6 +114,7 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
             />
           </Field>
         </div>
+        {dataMode !== "api" && <OptionsField text={optionText} none={noOptions} onTextChange={setOptionText} onNoneChange={setNoOptions} />}
         <Field label="광고 원문">
           <textarea
             {...bind("original")}
@@ -122,7 +129,7 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
         </p>
         {error && <p role="alert">{error}</p>}
         <div className="modal-actions">
-          <button className="secondary" type="button" onClick={() => onCancel(inputValues())}>
+          <button className="secondary" type="button" onClick={() => { try { onCancel(inputValues()); } catch (cause) { setError(cause.message); } }}>
             {onPreview ? "이전 단계" : "취소"}
           </button>
           <button className="primary" type="submit">

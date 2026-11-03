@@ -24,7 +24,7 @@ test("only persisted reviewed values can prefill; hints and official data are ex
   expect(reviewedAdvertisementValues({ ...draft, status: "EXTRACTION_READY" })).toBeNull();
   expect(reviewedAdvertisementValues({ ...draft, reviewed: null })).toBeNull();
   expect(reviewedAdvertisementValues(draft)).toEqual({ name: "", address: "", deposit: null,
-    rent: 123456, fee: 0, area: 20, areaType: "공급", floor: -20, original: "가상 광고 원문" });
+    rent: 123456, fee: 0, area: 20, areaType: "공급", floor: -20, options: null, original: "가상 광고 원문" });
   expect(reviewedAdvertisementValues({ ...draft, originalText: "", reviewed: { ...draft.reviewed, rawText: "이미지 OCR" } }).original).toBe("이미지 OCR");
 });
 
