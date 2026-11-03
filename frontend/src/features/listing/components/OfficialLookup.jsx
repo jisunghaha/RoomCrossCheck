@@ -96,6 +96,7 @@ export default function OfficialLookup({ room }) {
       <button type="button" className="primary" disabled={!/^\d{10}$/.test(query.legalCode) || !/^\d{1,4}$/.test(query.bun) || !/^\d{1,4}$/.test(query.ji)} onClick={() => lookup()}>건축물대장 조회</button>
       {result && <>
         <p role="status">{result.message}</p>
+        {result.fetchedAt && <p className="helper">공식 자료 조회 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}{result.cached && " · 최근 10분 이내 조회 자료 재사용"}</p>}
         {result.buildings.map(b => <label className="official-choice" key={b.id}>
           <input type="radio" name={`building-${room.id}`} checked={buildingId === b.id} onChange={() => { setBuildingId(b.id); setUnitId(""); }} />
           <span><strong>{b.name || "건물명 없음"} {b.dong}</strong><br />{b.address || b.jibunAddress}<br /><small>{b.jibunAddress} · {b.use || "용도 정보 없음"} · 지상 {b.aboveGroundFloors ?? "—"}층 / 지하 {b.undergroundFloors ?? "—"}층</small></span>
@@ -114,7 +115,7 @@ export default function OfficialLookup({ room }) {
         </>}
       </>}
     </fieldset>
-    {busy && <p role="status">공식 정보를 처리하고 있어요…</p>}
+    {busy && <p role="status">공식 정보를 처리하고 있어요… 일시적 오류는 최대 3회 자동 재시도합니다.</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
     <p className="helper">보증금·월세·관리비는 건축물대장으로 확인할 수 없습니다. 호실 자료가 없는 건물은 면적·층수를 비교하지 않습니다.</p>
   </section>;

@@ -42,7 +42,7 @@ class BuildingLedgerServiceTest {
         var client=mock(BuildingLedgerClient.class); var repo=mock(ListingRepository.class);
         Listing listing=new Listing(new ListingRequest("테스트","서울 강남구 테헤란로 152",null,null,null,new BigDecimal("20"),"전용",3,null));
         when(repo.findById(listing.id)).thenReturn(Optional.of(listing));
-        when(client.fetch(anyString(),any(),isNull(),isNull())).thenReturn(List.of(mapper.readTree("{\"mgmBldrgstPk\":\"b\",\"newPlatPlc\":\"서울특별시 강남구 테헤란로 152\"}")));
+        when(client.lookup(anyString(),any(),isNull(),isNull())).thenReturn(new BuildingLedgerClient.Lookup(List.of(mapper.readTree("{\"mgmBldrgstPk\":\"b\",\"newPlatPlc\":\"서울특별시 강남구 테헤란로 152\"}")),java.time.Instant.parse("2026-11-03T00:00:00Z"),false));
         var service=new BuildingLedgerService(client,repo);
         var result=service.search(listing.id,new LedgerQuery("1168010100","737","0","0",null,null));
         assertThrows(ResponseStatusException.class,()->service.save(listing.id,result.searchId(),"forged",null));
