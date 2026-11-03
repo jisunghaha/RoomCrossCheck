@@ -84,6 +84,8 @@ npm run evaluation:check
 
 ## 문서와 남은 작업
 
+- [건축물대장 조회·등록 정보 비교](docs/api/BUILDING_LEDGER.md): 매물 상세에서 실제 공식 주소·호실 면적·층수를 조회하고 차이를 확인합니다.
+
 - [프론트 개발 위치](frontend/README.md)
 - [백엔드 현재 구현 범위](backend/README.md)
 - [API 계약](docs/api/API_HANDOFF.md)

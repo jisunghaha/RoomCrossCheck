@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+python_bin=$(command -v python3 || command -v python || true)
+if [[ -z "$python_bin" ]]; then
+  echo "Python 3가 필요합니다. 설치 후 다시 실행해 주세요." >&2
+  exit 1
+fi
 mkdir -p backend/.mvn-cache
 setup_dir=$(mktemp -d)
 trap 'rm -rf "$setup_dir"' EXIT
 mounts=(-v "$PWD/backend:/app")
 if [[ -n ${HTTPS_PROXY:-} ]]; then
-  python - "$setup_dir/settings.xml" <<'PY'
+  "$python_bin" - "$setup_dir/settings.xml" <<'PY'
 import os, sys
 from urllib.parse import urlparse
 from xml.sax.saxutils import escape

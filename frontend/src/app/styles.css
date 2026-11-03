@@ -1818,3 +1818,14 @@ summary {
 .confirmation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
 .confirmation-grid dt { font-size: .8rem; color: var(--muted); }
 .confirmation-grid dd { margin: .4rem 0 0; font-weight: 600; }
+/* Building ledger lookup within the listing details. */
+.official-lookup { margin: 24px 0; padding: 20px; border: 1px solid #d4dfd7; border-radius: 16px; background: #f5f8f4; }
+.official-lookup fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.official-lookup .field { margin: 14px 0; }
+.official-manual { margin: 16px 0; }
+.official-address-picker { background: white; margin: 16px 0; border: 1px solid #d4dfd7; }
+.official-choice { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; padding: 14px; background: white; border: 1px solid #d4dfd7; border-radius: 10px; cursor: pointer; overflow-wrap: anywhere; }
+.official-choice input { width: auto; flex: 0 0 auto; margin-top: 5px; }
+.official-choice small { color: #65746b; }
+.official-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.official-facts { border-left: 3px solid #8baa92; padding-left: 16px; font-size: 14px; overflow-wrap: anywhere; }

@@ -113,7 +113,7 @@ export function createLocalRepository(storage = window.localStorage) {
 export function createListingRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, storage = window.localStorage } = {}) {
   const local = createLocalRepository(storage);
   const url = `${baseUrl.replace(/\/$/, "")}/listings`;
-  const asRoom = value => ({ ...value, tags: ["직접 등록"], theme: "sage", official: null, source: "server" });
+  const asRoom = value => ({ ...value, tags: ["직접 등록"], theme: "sage", official: value.official ?? null, source: "server" });
   async function request(path = "", method = "GET", body) {
     let response;
     try {
@@ -123,11 +123,17 @@ export function createListingRepository({ baseUrl = "/api", fetchImpl = globalTh
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
     } catch { throw new Error("매물 서버에 연결하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요."); }
-    if (!response.ok) throw new Error(`매물 서버 요청에 실패했어요. (${response.status})`);
+    if (!response.ok) {
+      let detail;
+      try { detail = await response.json(); } catch { /* Fall back for proxy/network error pages. */ }
+      throw new Error(detail?.message || `매물 서버 요청에 실패했어요. (${response.status})`);
+    }
     return response.status === 204 ? undefined : response.json();
   }
   return {
     mode: "listing-api",
+    searchOfficial: (id, query) => request(`/${encodeURIComponent(id)}/official/search`, "POST", query),
+    async saveOfficial(id, selection) { return asRoom(await request(`/${encodeURIComponent(id)}/official`, "PUT", selection)); },
     initialState: () => ({ rooms: [], reviews: local.initialState().reviews, visits: local.initialState().visits }),
     async load() {
       const rooms = await request();

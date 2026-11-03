@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+import com.roomcrosscheck.building.OfficialRecord;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "listings")
@@ -22,6 +25,9 @@ public class Listing {
     @Column(length = 10000) public String original;
     @Column(nullable = false) public LocalDate createdAt;
     @Column(nullable = false) public String building;
+    @Version public long version;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition="json") public OfficialRecord official;
 
     protected Listing() {}
     public Listing(ListingRequest r) {
@@ -31,6 +37,7 @@ public class Listing {
         update(r);
     }
     public void update(ListingRequest r) {
+        official = null;
         name = r.name().trim(); address = r.address().trim();
         deposit = r.deposit(); rent = r.rent(); fee = r.fee();
         area = r.area(); areaType = r.areaType(); floor = r.floor(); original = r.original();
