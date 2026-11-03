@@ -22,6 +22,25 @@ import static org.mockito.Mockito.*;
 class ExtractionServiceTest {
     @TempDir Path directory;
 
+    @Test void userReviewCannotOverwriteOriginalAiEvidence() {
+        var repo = mock(AdvertisementRepository.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_READY;
+        ad.extractionJson = "{\"rawText\":\"월세 35만원\",\"monthlyRentWon\":350000,\"evidence\":{\"monthlyRentWon\":{\"quote\":\"월세 35만원\",\"source\":\"INPUT_TEXT\",\"status\":\"PRESENT\"}}}";
+        String original = ad.extractionJson;
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        var fake = new com.roomcrosscheck.extraction.dto.FieldEvidence("수정한 근거", "INPUT_TEXT", "PRESENT", null);
+        var input = new ExtractionResult("수정한 글", null, null, 380000L, null, null, null, "미상", null,
+            java.util.Map.of("monthlyRentWon", fake));
+        var service = new ExtractionService(repo, mock(ExtractionProvider.class), JsonMapper.builder().build(), directory.toString());
+        var response = service.review(ad.id, input);
+        assertEquals(380000L, response.reviewed().monthlyRentWon());
+        assertNull(response.reviewed().evidence());
+        assertEquals("월세 35만원", response.extraction().evidence().get("monthlyRentWon").quote());
+        assertEquals(original, ad.extractionJson);
+    }
+
     @Test void typedFailuresPreserveOriginalAndAllowRetryWithoutSavingEmptyResults() {
         for (var kind : new ExtractionFailure.Kind[]{ExtractionFailure.Kind.INVALID_RESPONSE,
                 ExtractionFailure.Kind.NO_READABLE_TEXT, ExtractionFailure.Kind.TIMEOUT,

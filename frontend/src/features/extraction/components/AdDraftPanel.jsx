@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import OptionsField from "../../../shared/ui/OptionsField.jsx";
 import { parseOptions, optionsText } from "../../../shared/lib/options.js";
 import { reviewedAdvertisementValues } from "../model/reviewedAdvertisement.js";
+import ExtractionEvidence from "./ExtractionEvidence.jsx";
 
 const labels = {
   DRAFT: "임시 저장", EXTRACTION_PENDING: "추출 대기", EXTRACTION_READY: "추출 결과 확인 필요",
@@ -73,6 +74,7 @@ function ReviewForm({ draft, busy, onSave }) {
     });
   }}>
     <p>AI 결과를 원본 광고와 비교하고 틀린 값을 고쳐 주세요. 빈칸은 확인되지 않은 값입니다. 면적 종류가 불명확하면 미상으로 유지해 주세요.</p>
+    <ExtractionEvidence draft={draft} />
     <label>읽은 광고 글<textarea name="rawText" rows="3" maxLength="10000" defaultValue={result?.rawText || ""} /></label>
     <div className="form-grid">
       <label>주소<input name="address" maxLength="160" defaultValue={result?.address || ""} /></label>

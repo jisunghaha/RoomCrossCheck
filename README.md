@@ -76,6 +76,8 @@ VITE_DATA_MODE=listing-api VITE_API_BASE_URL=/api npm run dev
 
 새 추출 응답은 핵심 필드·자료형을 검사하며 빈 JSON과 읽힌 글자 없는 응답을 성공으로 저장하지 않습니다. 시간 초과·인증·사용 한도·연결·응답 오류를 구분해 안내하고 원본을 보존해 사용자가 재시도할 수 있습니다. [응답 검증·실패 처리](docs/sfr003/EXTRACTION_FAILURES.md)를 참고하세요.
 
+추출 결과의 항목별 근거 문구·참조 글·미기재/확인 필요 상태를 보관하고 확인 폼에서 최초 AI 값과 함께 표시합니다. 문구가 참조 글에 없거나 값·상태가 모순되면 확인 필요로 낮춥니다. 이미지의 근거는 AI가 읽은 글을 참조하며 원본 이미지의 정확성을 보증하지 않습니다. 사용자 수정은 AI 근거를 덮어쓰지 않습니다. [근거 계약과 검증](docs/sfr003/FIELD_EVIDENCE.md)을 참고하세요.
+
 일반 `dev-up.sh`는 상속된 `HTTPS_PROXY`와 공개 CA `CODEX_PROXY_CERT` 또는 `JAVA_PROXY_CA_FILE`로 `.runtime/compose.java-runtime.json`을 생성합니다. 컨테이너 진입점이 Java 프록시·CA를 적용하고 TLS 검증을 유지합니다. API 키는 이 생성 파일에 넣지 않습니다. 프록시가 없으면 기본 Java 신뢰 설정을 사용합니다. Docker 설정·레지스트리 인증은 유지합니다.
 
 ```sh

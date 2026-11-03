@@ -82,7 +82,8 @@ public class ExtractionService {
         Advertisement ad = find(id);
         if (ad.status != Advertisement.Status.EXTRACTION_READY && ad.status != Advertisement.Status.REVIEWED)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "확인할 추출 결과가 없습니다.");
-        ad.reviewedJson = json(validate(input));
+        // Evidence belongs to the immutable AI result, never to user-supplied corrections.
+        ad.reviewedJson = json(validate(input).withEvidence(null));
         ad.reviewedAt = Instant.now();
         ad.status = Advertisement.Status.REVIEWED;
         return AdvertisementResponse.from(repository.save(ad));
