@@ -6,9 +6,12 @@ import com.roomcrosscheck.listing.dto.AdvertisementResponse;
 import com.roomcrosscheck.listing.service.AdvertisementService;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/advertisements")
@@ -41,5 +44,12 @@ public class AdvertisementController {
     @PutMapping("/{id}/extraction")
     public AdvertisementResponse review(@PathVariable String id, @RequestBody ExtractionResult result) {
         return extraction.review(id, result);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> error(ResponseStatusException error) {
+        String message = error.getStatusCode().is4xxClientError() && error.getReason() != null
+            ? error.getReason() : "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        return ResponseEntity.status(error.getStatusCode()).body(Map.of("message", message));
     }
 }

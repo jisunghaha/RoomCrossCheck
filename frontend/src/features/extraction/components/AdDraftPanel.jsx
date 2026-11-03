@@ -8,6 +8,24 @@ const labels = {
   EXTRACTION_FAILED: "추출 실패 · 재시도 가능", REVIEWED: "사용자 확인 완료",
 };
 
+async function uploadError(response) {
+  const fallback = {
+    400: "광고 글과 입력 항목, JPG·PNG 이미지 형식을 확인해 주세요.",
+    409: "같은 요청의 내용이 달라 저장하지 못했습니다. 입력 내용을 확인해 주세요.",
+    413: "업로드 용량을 초과했습니다. 광고 이미지는 10MB 이하로 올려 주세요.",
+    415: "JPG·PNG 이미지 형식으로 올려 주세요.",
+  };
+  if (fallback[response.status]) {
+    try {
+      const body = await response.json();
+      if (typeof body.message === "string" && body.message.trim() && body.message.length <= 300)
+        return body.message;
+    } catch { /* A proxy may return an empty or HTML error response. */ }
+    return fallback[response.status];
+  }
+  return "원본을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.";
+}
+
 function ReviewForm({ draft, busy, onSave }) {
   const result = draft.reviewed || draft.extraction;
   const [optionText, setOptionText] = useState(() => optionsText(result?.options));
@@ -67,15 +85,24 @@ export default function AdDraftPanel({ onRegister }) {
   async function submit(event) {
     event.preventDefault();
     if (!text.trim() && !image) { setError("광고 글이나 이미지를 넣어 주세요."); return; }
+    if (image && image.size > 10 * 1024 * 1024) {
+      setError("광고 이미지는 10MB 이하로 올려 주세요.");
+      return;
+    }
     const form = event.currentTarget;
     const data = new FormData(form);
     if (!image) data.delete("image");
     setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch("/api/advertisements", {
-        method: "POST", headers: { "Idempotency-Key": key.current }, body: data,
-      });
-      if (!response.ok) throw new Error(`원본을 저장하지 못했어요. (${response.status})`);
+      let response;
+      try {
+        response = await fetch("/api/advertisements", {
+          method: "POST", headers: { "Idempotency-Key": key.current }, body: data,
+        });
+      } catch {
+        throw new Error("서버에 연결하지 못했습니다. 입력 내용은 유지됩니다. 연결을 확인하고 다시 시도해 주세요.");
+      }
+      if (!response.ok) throw new Error(await uploadError(response));
       const saved = await response.json();
       await refresh();
       setMessage(`원본을 임시 저장했어요. ID: ${saved.id}`);

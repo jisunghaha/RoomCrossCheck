@@ -6,6 +6,7 @@ import com.roomcrosscheck.listing.repository.AdvertisementRepository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,9 +65,7 @@ public class AdvertisementService {
         String hash = hash(original, addressHint, unitLabel, sourceUrl, bytes);
         var existing = repository.findByIdempotencyKey(key);
         if (existing.isPresent()) {
-            if (!Objects.equals(existing.get().requestHash, hash))
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "같은 요청 키에 다른 내용이 사용됐습니다.");
-            return AdvertisementResponse.from(existing.get());
+            return replay(existing.get(), hash);
         }
         Advertisement ad = new Advertisement();
         ad.idempotencyKey = key;
@@ -87,13 +86,30 @@ public class AdvertisementService {
                 Files.createDirectories(storageDirectory);
                 Files.write(stored, bytes, StandardOpenOption.CREATE_NEW);
             }
-            return AdvertisementResponse.from(repository.save(ad));
+            // Flush in the repository transaction so a competing insert has committed
+            // or rolled back before we look up its result outside that transaction.
+            return AdvertisementResponse.from(repository.saveAndFlush(ad));
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "원본 이미지를 저장하지 못했습니다.", e);
+        } catch (DataIntegrityViolationException e) {
+            deleteUncommittedImage(stored);
+            var winner = repository.findByIdempotencyKey(key);
+            if (winner.isPresent()) return replay(winner.get(), hash);
+            throw e;
         } catch (RuntimeException e) {
-            if (stored != null) try { Files.deleteIfExists(stored); } catch (IOException ignored) { }
+            deleteUncommittedImage(stored);
             throw e;
         }
+    }
+
+    private static AdvertisementResponse replay(Advertisement existing, String hash) {
+        if (!Objects.equals(existing.requestHash, hash))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "같은 요청 키에 다른 내용이 사용됐습니다.");
+        return AdvertisementResponse.from(existing);
+    }
+
+    private static void deleteUncommittedImage(Path stored) {
+        if (stored != null) try { Files.deleteIfExists(stored); } catch (IOException ignored) { }
     }
 
     public AdvertisementResponse confirm(String id) {
@@ -121,7 +137,8 @@ public class AdvertisementService {
         return name;
     }
     private static byte[] readImage(MultipartFile image) {
-        if (image.getSize() > MAX_IMAGE_BYTES) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
+        if (image.getSize() > MAX_IMAGE_BYTES)
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "광고 이미지는 10MB 이하로 올려 주세요.");
         try { return image.getBytes(); }
         catch (IOException e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지를 읽지 못했습니다.", e); }
     }
