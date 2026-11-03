@@ -8,7 +8,11 @@ import org.springframework.http.HttpStatus;
 import java.net.*;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import java.time.*;
+import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.*;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.XMLConstants;
@@ -18,17 +22,36 @@ import java.io.StringReader;
 
 @Component
 public class BuildingLedgerClient {
+    private static final Logger log=LoggerFactory.getLogger(BuildingLedgerClient.class);
+    public record Lookup(List<JsonNode> items, Instant fetchedAt, boolean cached) {}
+    private record CacheKey(String operation,String legalCode,int bun,int ji,String landType,String dong,String ho) {}
+    private record Cached(Lookup result,Instant expires) {}
+    private final Map<CacheKey,Cached> cache=new ConcurrentHashMap<>();
     private final ObjectMapper mapper;
     private final String key, base;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    private final Clock clock;
+    private final Duration cacheTtl;
+    private final long retryDelayMs;
+    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    @Autowired
     public BuildingLedgerClient(ObjectMapper mapper,
         @Value("${building-register.api-key:}") String key,
         @Value("${building-register.base-url:https://apis.data.go.kr/1613000/BldRgstHubService}") String base) {
-        this.mapper=mapper; this.key=key; this.base=base;
+        this(mapper,key,base,Clock.systemUTC(),Duration.ofMinutes(10),400);
+    }
+    BuildingLedgerClient(ObjectMapper mapper,String key,String base,Clock clock,Duration cacheTtl,long retryDelayMs) {
+        this.mapper=mapper; this.key=key; this.base=base; this.clock=clock; this.cacheTtl=cacheTtl; this.retryDelayMs=retryDelayMs;
     }
     public List<JsonNode> fetch(String operation, LedgerQuery q, String dong, String ho) {
+        return lookup(operation,q,dong,ho).items();
+    }
+    public Lookup lookup(String operation, LedgerQuery q, String dong, String ho) {
         if (key.isBlank()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"건축물대장 인증키가 설정되지 않았습니다.");
         if (!Set.of("getBrTitleInfo", "getBrExposPubuseAreaInfo").contains(operation)) throw new IllegalArgumentException();
+        var cacheKey=new CacheKey(operation,q.legalCode(),Integer.parseInt(q.bun()),Integer.parseInt(q.ji()),q.landType(),dong==null?"":dong.trim(),ho==null?"":ho.trim());
+        Instant started=clock.instant();
+        Cached previous=cache.get(cacheKey);
+        if (previous!=null && previous.expires().isAfter(started)) return new Lookup(previous.result().items(),previous.result().fetchedAt(),true);
         var items = new ArrayList<JsonNode>();
         for (int page=1; page<=30; page++) {
             var params = new LinkedHashMap<String,String>();
@@ -40,28 +63,57 @@ public class BuildingLedgerClient {
             if (dong!=null && !dong.isBlank()) params.put("dongNm",dong);
             if (ho!=null && !ho.isBlank()) params.put("hoNm",ho);
             String query = params.entrySet().stream().map(e -> enc(e.getKey())+"="+enc(e.getValue())).collect(java.util.stream.Collectors.joining("&"));
+            JsonNode root=requestPage(operation,URI.create(base+"/"+operation+"?"+query));
+            var body=root.path("body"); var rows=body.path("items").path("item");
+            int before=items.size();
+            if (rows.isArray()) rows.forEach(items::add); else if (rows.isObject()) items.add(rows);
+            int total=body.path("totalCount").asInt(-1);
+            if (items.size()>=total) {
+                Lookup result=new Lookup(List.copyOf(items),started,false);
+                cache.entrySet().removeIf(e -> !e.getValue().expires().isAfter(clock.instant()));
+                if (!cacheTtl.isZero() && !cacheTtl.isNegative()) {
+                    if (cache.size()>=256) cache.keySet().stream().findFirst().ifPresent(cache::remove);
+                    Duration ttl=items.isEmpty()?Duration.ofSeconds(Math.min(cacheTtl.toSeconds(),60)):cacheTtl;
+                    cache.put(cacheKey,new Cached(result,clock.instant().plus(ttl)));
+                }
+                return result;
+            }
+            if (items.size()==before) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 조회 결과가 일부 누락되었습니다. 다시 조회해 주세요.");
+        }
+        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,"조회 결과가 너무 많습니다. 동·호실을 구체적으로 선택해 주세요.");
+    }
+    private static class Retryable extends RuntimeException {
+        Retryable(String reason) { super(reason); }
+    }
+    private JsonNode requestPage(String operation,URI uri) {
+        for (int attempt=1; attempt<=3; attempt++) {
             try {
-                var response=http.send(HttpRequest.newBuilder(URI.create(base+"/"+operation+"?"+query)).timeout(Duration.ofSeconds(25)).GET().build(),HttpResponse.BodyHandlers.ofString());
+                var response=http.send(HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(8)).header("Accept","application/json, application/xml;q=0.9").GET().build(),HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
                 int status=response.statusCode();
                 if (status==401 || status==403) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 API 인증이 거부되었습니다. 인증키와 해당 서비스의 활용 신청 승인 상태를 확인해 주세요. (HTTP "+status+")");
                 if (status==429) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 API 요청 한도에 도달했습니다. 잠시 후 다시 조회해 주세요. (HTTP 429)");
-                if (status!=200) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 조회 서버가 일시적으로 이용 불가합니다. 잠시 후 다시 조회해 주세요. (HTTP "+status+")");
-                JsonNode root=parseResponse(response.body());
+                if (Set.of(408,500,502,503,504).contains(status)) throw new Retryable("HTTP "+status);
+                if (status!=200) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 API 요청이 거부되었습니다. 입력값을 확인해 주세요. (HTTP "+status+")");
+                JsonNode root;
+                try { root=parseResponse(response.body()); }
+                catch (ResponseStatusException e) { throw new Retryable("비정상 응답 형식"); }
                 String code=root.path("header").path("resultCode").asText("").trim();
-                if (code.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 API 응답에 처리 결과 코드가 없습니다. 응답 형식 또는 서비스 상태를 확인해 주세요.");
+                if (code.isBlank()) throw new Retryable("결과 코드 누락");
                 if (!Set.of("00","0").contains(code)) throw apiError(code);
-                var body=root.path("body"); var rows=body.path("items").path("item");
-                int before=items.size();
-                if (rows.isArray()) rows.forEach(items::add); else if (rows.isObject()) items.add(rows);
-                int total=body.path("totalCount").asInt(-1);
-                if (total<0) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 응답의 전체 건수를 확인할 수 없습니다.");
-                if (items.size()>=total) return List.copyOf(items);
-                if (items.size()==before) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 조회 결과가 일부 누락되었습니다. 다시 조회해 주세요.");
+                if (root.path("body").path("totalCount").asInt(-1)<0) throw new Retryable("전체 건수 누락");
+                return root;
             } catch (ResponseStatusException e) { throw e; }
             catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 조회가 중단되었습니다."); }
-            catch (Exception e) { throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"건축물대장 서버 연결에 실패했습니다. 잠시 후 다시 조회해 주세요."); }
+            catch (java.io.IOException | Retryable e) {
+                String reason=e instanceof Retryable?e.getMessage():"연결 오류 또는 시간 초과";
+                // Never log the URL, upstream body, credentials or user address.
+                log.warn("Building ledger transient response: operation={}, attempt={}, reason={}",operation,attempt,reason);
+                if (attempt==3) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 조회 서버의 일시적 오류로 3회 자동 재시도 후에도 조회하지 못했습니다. ("+reason+") 잠시 후 다시 조회해 주세요. 기존 저장 결과는 유지됩니다.");
+                try { Thread.sleep(retryDelayMs*attempt); }
+                catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"공식 조회가 중단되었습니다."); }
+            }
         }
-        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,"조회 결과가 너무 많습니다. 동·호실을 구체적으로 선택해 주세요.");
+        throw new IllegalStateException();
     }
     JsonNode parseResponse(String payload) {
         try {

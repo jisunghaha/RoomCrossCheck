@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BuildingLedgerService {
     public record Building(String id,String address,String jibunAddress,String name,String dong,String use,String approvedOn,Integer aboveGroundFloors,Integer undergroundFloors) {}
     public record Unit(String id,String dong,String ho,BigDecimal area,Integer floor,String reason) {}
-    public record SearchResult(String searchId,List<Building> buildings,List<Unit> units,String message) {}
-    private record Search(String listingId,long version,Instant expires,List<Building> buildings,List<Unit> units) {}
+    public record SearchResult(String searchId,List<Building> buildings,List<Unit> units,String message,String fetchedAt,boolean cached) {}
+    private record Search(String listingId,long version,Instant expires,List<Building> buildings,List<Unit> units,Instant fetchedAt) {}
     private final Map<String,Search> searches=new ConcurrentHashMap<>();
     private final BuildingLedgerClient client;
     private final ListingRepository repository;
@@ -24,7 +24,10 @@ public class BuildingLedgerService {
 
     public SearchResult search(String listingId,LedgerQuery query) {
         Listing listing=find(listingId);
-        var buildings=client.fetch("getBrTitleInfo",query,null,null).stream().map(n -> new Building(
+        var titleResult=client.lookup("getBrTitleInfo",query,null,null);
+        Instant fetchedAt=titleResult.fetchedAt();
+        boolean cached=titleResult.cached();
+        var buildings=titleResult.items().stream().map(n -> new Building(
             text(n,"mgmBldrgstPk"),text(n,"newPlatPlc"),text(n,"platPlc"),text(n,"bldNm"),text(n,"dongNm"),
             text(n,"mainPurpsCdNm"),text(n,"useAprDay"),integer(n,"grndFlrCnt"),integer(n,"ugrndFlrCnt"))).toList();
         List<Unit> units=List.of();
@@ -35,18 +38,20 @@ public class BuildingLedgerService {
             if (query.ho()!=null && !query.ho().isBlank()) {
                 String ho=query.ho().trim();
                 if (ho.matches("[0-9]+")) ho+="호";
-                var rows=client.fetch("getBrExposPubuseAreaInfo",query,selected.dong(),ho);
+                var unitResult=client.lookup("getBrExposPubuseAreaInfo",query,selected.dong(),ho);
                 // Some ledgers store the unit name without the suffix.
-                if (rows.isEmpty() && ho.endsWith("호")) rows=client.fetch("getBrExposPubuseAreaInfo",query,selected.dong(),ho.substring(0,ho.length()-1));
-                units=units(rows,selected.dong(),query.ho());
+                if (unitResult.items().isEmpty() && ho.endsWith("호")) unitResult=client.lookup("getBrExposPubuseAreaInfo",query,selected.dong(),ho.substring(0,ho.length()-1));
+                if (unitResult.fetchedAt().isBefore(fetchedAt)) fetchedAt=unitResult.fetchedAt();
+                cached=cached || unitResult.cached();
+                units=units(unitResult.items(),selected.dong(),query.ho());
                 message=units.isEmpty()?"이 동·호실의 전유면적 자료가 없습니다. 건물 정보만 저장할 수 있으며 호실 면적·층수는 비교 불가로 표시됩니다.":"조회된 호실을 선택하세요. 면적과 층수는 선택한 호실의 전유 자료로만 비교합니다.";
             } else message="건물 자료를 확인했습니다. 호실을 입력해 조회하거나 건물 정보만 저장할 수 있습니다.";
         }
         searches.entrySet().removeIf(e -> e.getValue().expires().isBefore(Instant.now()));
         if (searches.size()>=500) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,"조회 요청이 많습니다. 잠시 후 다시 시도해 주세요.");
         String id=UUID.randomUUID().toString();
-        searches.put(id,new Search(listing.id,listing.version,Instant.now().plusSeconds(600),buildings,units));
-        return new SearchResult(id,buildings,units,message);
+        searches.put(id,new Search(listing.id,listing.version,Instant.now().plusSeconds(600),buildings,units,fetchedAt));
+        return new SearchResult(id,buildings,units,message,fetchedAt.toString(),cached);
     }
 
     public Listing save(String listingId,String searchId,String buildingId,String unitId) {
@@ -59,7 +64,7 @@ public class BuildingLedgerService {
         // Units belong to the one building selected during this search, never to a client-supplied value.
         Unit u=unitId==null || unitId.isBlank()?null:search.units().stream().filter(x -> x.id().equals(unitId)).findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"조회한 호실을 선택해 주세요."));
         if (u!=null && search.buildings().size()!=1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        listing.official=new OfficialRecord("국토교통부 건축HUB 건축물대장",Instant.now().toString(),b.id(),b.address(),b.jibunAddress(),b.name(),b.dong(),u==null?null:u.ho(),b.use(),b.approvedOn(),b.aboveGroundFloors(),b.undergroundFloors(),u==null?"건물":"호실",u==null?null:u.area(),"전용",u==null?null:u.floor(),addressMatches(listing.address,b.address(),b.jibunAddress()));
+        listing.official=new OfficialRecord("국토교통부 건축HUB 건축물대장",search.fetchedAt().toString(),b.id(),b.address(),b.jibunAddress(),b.name(),b.dong(),u==null?null:u.ho(),b.use(),b.approvedOn(),b.aboveGroundFloors(),b.undergroundFloors(),u==null?"건물":"호실",u==null?null:u.area(),"전용",u==null?null:u.floor(),addressMatches(listing.address,b.address(),b.jibunAddress()));
         Listing saved=repository.save(listing);
         searches.remove(searchId);
         return saved;
