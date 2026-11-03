@@ -1,0 +1,83 @@
+{
+  "verifiedDate": "2026-11-04",
+  "timezone": "Asia/Seoul",
+  "branch": "feature/sfr-003-gemini-extraction",
+  "codeCommit": "131f6461a5cde517788af9cb09023fd667b69863",
+  "model": "gemini-3.5-flash-lite",
+  "additionalAuthorizedAttempts": 2,
+  "actualAttempts": 2,
+  "automaticRetries": false,
+  "input": "Selected original PNG bytes only; no ad text, hints or answers.",
+  "cases": [
+    {
+      "sampleId": "busan-004-2",
+      "sourceSha256": "601112ee6a6dde2266f7b19e9b3c810b39fe98c4beddcfe70f520641b1a2c832",
+      "httpStatus": 200,
+      "elapsedSeconds": 3.51,
+      "evidenceFieldCount": 8,
+      "values": {
+        "address": null,
+        "depositWon": null,
+        "monthlyRentWon": null,
+        "maintenanceFeeWon": 100000,
+        "areaSqm": 16.94,
+        "areaType": "전용",
+        "floor": 2,
+        "options": [
+          "붙박이장",
+          "주차 가능",
+          "세탁기",
+          "냉장고"
+        ]
+      },
+      "evidenceStates": {
+        "floor": "PRESENT",
+        "options": "PRESENT",
+        "monthlyRentWon": "NOT_STATED",
+        "areaSqm": "PRESENT",
+        "maintenanceFeeWon": "PRESENT",
+        "address": "NOT_STATED",
+        "areaType": "PRESENT",
+        "depositWon": "NOT_STATED"
+      },
+      "quotedEvidenceInAiReadText": true
+    },
+    {
+      "sampleId": "busan-008-1",
+      "sourceSha256": "9a83980ea13221e76488e8d233bd5735d059ea9b3da3fc20a11459a295f15864",
+      "httpStatus": 200,
+      "elapsedSeconds": 55.483,
+      "evidenceFieldCount": 8,
+      "values": {
+        "address": "부산 금정구 장전동",
+        "depositWon": 5000000,
+        "monthlyRentWon": 350000,
+        "maintenanceFeeWon": null,
+        "areaSqm": 19.212,
+        "areaType": "공급",
+        "floor": 4,
+        "options": null
+      },
+      "evidenceStates": {
+        "floor": "PRESENT",
+        "options": "NOT_STATED",
+        "monthlyRentWon": "PRESENT",
+        "areaSqm": "PRESENT",
+        "maintenanceFeeWon": "NOT_STATED",
+        "address": "PRESENT",
+        "areaType": "PRESENT",
+        "depositWon": "PRESENT"
+      },
+      "quotedEvidenceInAiReadText": true
+    }
+  ],
+  "browserDisplayedActualStoredResults": true,
+  "restartPreservedResults": true,
+  "temporaryResourcesRemoved": true,
+  "requestTimeoutSeconds": 60,
+  "latencyCauseEstablished": false,
+  "accuracyPopulationEstimate": false,
+  "ocrCERMeasured": false,
+  "observations": "assistant visual review; not independent human ground truth",
+  "billingOrRemainingQuotaVerified": false
+}
