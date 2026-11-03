@@ -17,6 +17,8 @@ export const fixedCost = (r) =>
 export function audit(r) {
   if (!r.official) return { rows: [], rate: null, count: 0 };
   const o = r.official;
+  const areaDifference = r.area == null || o.area == null ? null : Math.abs(r.area - o.area);
+  const areaRoundoff = Number.EPSILON * Math.max(1, Math.abs(r.area ?? 0), Math.abs(o.area ?? 0)) * 2;
   const rows = [
     {
       label: "면적",
@@ -28,7 +30,7 @@ export function audit(r) {
         r.areaType !== "미상" &&
         r.areaType === o.areaType &&
         o.scope === "호실",
-      match: Math.abs(r.area - o.area) <= 0.5,
+      match: areaDifference != null && areaDifference <= 0.5 + areaRoundoff,
       reason: "동일 호실·같은 면적 종류만 비교 · 허용오차 0.5㎡",
     },
     {

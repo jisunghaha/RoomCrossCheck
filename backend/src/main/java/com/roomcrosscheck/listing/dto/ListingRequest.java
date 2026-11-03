@@ -17,7 +17,7 @@ public final class ListingRequest {
     @PositiveOrZero private final Long deposit;
     @PositiveOrZero private final Long rent;
     @PositiveOrZero private final Long fee;
-    @DecimalMin("0.0") private final BigDecimal area;
+    @DecimalMin("0.0") @DecimalMax("100000") @Digits(integer = 6, fraction = 4) private final BigDecimal area;
     @Pattern(regexp = "전용|공급|미상") private final String areaType;
     @Min(-20) @Max(200) private final Integer floor;
     @Size(max = 10000) private final String original;
@@ -42,7 +42,7 @@ public final class ListingRequest {
         this.deposit = deposit;
         this.rent = rent;
         this.fee = fee;
-        this.area = area;
+        this.area = area == null ? null : area.stripTrailingZeros();
         this.areaType = areaType;
         this.floor = floor;
         this.original = original;

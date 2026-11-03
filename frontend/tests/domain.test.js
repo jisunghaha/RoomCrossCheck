@@ -50,3 +50,13 @@ test("comparison accepts only 2–3 distinct listings", () => {
   for (const x of [[], ["a"], ["a", "a"], ["a", "b", "c", "d"]])
     assert.equal(validateComparison(x), false);
 });
+
+test("area comparison retains four decimals and tolerates only floating roundoff at the existing boundary", () => {
+  const r = { area: 15.876, areaType: "전용", official: { area: 16.376, areaType: "전용", scope: "호실" } };
+  assert.equal(audit(r).rate, 100);
+  r.area = 15.8761;
+  r.official.area = 16.3762;
+  assert.equal(audit(r).rate, 0);
+  r.official.areaType = "공급";
+  assert.equal(audit(r).count, 0);
+});

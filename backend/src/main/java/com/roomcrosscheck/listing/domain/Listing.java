@@ -20,7 +20,7 @@ public class Listing {
     public Long deposit;
     public Long rent;
     public Long fee;
-    @Column(precision = 10, scale = 2) public BigDecimal area;
+    @Column(precision = 10, scale = 4) public BigDecimal area;
     @Column(length = 10) public String areaType;
     public Integer floor;
     @JdbcTypeCode(SqlTypes.JSON)

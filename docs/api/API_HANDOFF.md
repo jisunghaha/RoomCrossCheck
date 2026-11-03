@@ -157,3 +157,9 @@ Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED
 - POST /api/listings에서 생략/null은 null로 저장한다. PATCH에서 생략하면 기존 값을 보존하고, 명시한 null은 미확인으로 변경하며 []는 명시적인 옵션 없음으로 저장한다. 요청의 optionsProvided 필드는 무시하며 옵션 필드의 실제 존재 여부는 서버에서 판단한다.
 - listings.options는 nullable JSON이다. 이전 매물은 null이며, 새 컬럼을 위해 팀 V1·rooms를 수정하지 않는다. 현재 로컬 JPA update와 별개로 실제 기존 DB에 적용하려면 SQL 안내에 따라 백업·대상·컬럼 유무를 확인해야 한다.
 - JSON 응답에는 null/배열을 그대로 반환한다. 브라우저는 옵션을 텍스트로 표시하며 실행 가능한 HTML로 해석하지 않는다. local 모드도 같은 입력을 저장하지만 api(/rooms) 모드의 수정 폼에는 옵션 입력을 추가하지 않았다.
+
+## 최종 매물 면적 정밀도 (2026-11-03)
+
+개발용 POST/PATCH /api/listings의 area는 null 또는 0~100000㎡이며 유효 소수 최대 4자리다. 소수 초과·음수·상한 초과는 400이며 DB 반올림으로 성공시키지 않는다. 값이 같은 끝자리 0은 정리할 수 있다. 입력 19.212와 저장 후 GET 19.212는 같은 값을 유지한다. 컬럼은 DECIMAL(10,4)로 팀 설계의 정밀도와 맞췄지만 팀 /rooms 계약·V1 SQL은 변경하지 않았다.
+
+광고 extraction.areaSqm·reviewed.areaSqm은 이 최종 저장 제한으로 덮어쓰지 않는다. 더 세밀한 값은 원문과 확인 JSON에 남겨 두고 최종 폼에서 명시적으로 수정해야 한다. 기존 데이터에 필요한 이행·범위 검사와 과거 손실값 복구의 한계는 AREA_PRECISION.md 및 sql/README.md에 정리했다.

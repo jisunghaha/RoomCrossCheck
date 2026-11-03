@@ -91,7 +91,7 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
                 type="number"
                 min="0"
                 max={key === "area" ? "100000" : "100000000"}
-                step={key === "area" ? "0.01" : "0.0001"}
+                step="0.0001"
                 placeholder="미상은 비워두세요"
               />
             </Field>
@@ -114,6 +114,7 @@ export default function RoomForm({ room, initialValues, onPreview, heading, help
             />
           </Field>
         </div>
+        <p className="helper">면적은 소수점 넷째 자리까지 저장합니다. 더 세밀한 값은 원본·확인값을 참고해 직접 수정해 주세요.</p>
         {dataMode !== "api" && <OptionsField text={optionText} none={noOptions} onTextChange={setOptionText} onNoneChange={setNoOptions} />}
         <Field label="광고 원문">
           <textarea

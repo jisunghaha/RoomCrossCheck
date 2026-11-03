@@ -32,3 +32,7 @@ ExtractionResult에 areaType(전용·공급·미상)을 추가했다. 구버전 
 ## 옵션 배열 저장
 
 ExtractionResult.options와 listings.options(JSON)을 연결했다. 공통 역직렬화에서 문자열 배열·크기·길이·제어문자를 검증하고 공백·중복을 정리한다. ListingRequest는 기존 생성자와 접근자를 유지하면서 setter 호출 여부로 생략과 명시적 null을 구분한다. 이 구분 때문에 DTO를 record에서 클래스로 변경했으며 기존 검증 제약은 동일하다. 기존 PATCH의 옵션 생략은 저장값을 보존한다. 적용 전 절차는 docs/sfr003/sql/README.md를 참조한다.
+
+## 최종 매물 면적 정밀도
+
+listings.area는 DECIMAL(10,4)이며 ListingRequest는 0~100000㎡·유효 소수 4자리로 검증한다. 원값을 반올림하지 않고 초과 요청은 거부한다. 추출·확인 JSON의 정밀도는 별도로 보존한다. 기존 정수부 범위 축소에 대비해 MySQL 연결의 기존 sql_mode에 STRICT_ALL_TABLES를 추가하고 Hibernate 스키마 오류 시 시작을 중단한다. 기존 DB는 앱을 시작하기 전에 docs/sfr003/sql/README.md의 사전 검사·백업·SQL 이행을 따라야 한다. 단순히 컬럼을 넓혀도 과거에 반올림된 값이 자동 복원되지는 않는다.
