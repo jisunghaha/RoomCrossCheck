@@ -1,6 +1,7 @@
 package com.roomcrosscheck.listing.controller;
 
 import com.roomcrosscheck.extraction.dto.ExtractionResult;
+import com.roomcrosscheck.extraction.client.ExtractionFailure;
 import com.roomcrosscheck.extraction.service.ExtractionService;
 import com.roomcrosscheck.listing.dto.AdvertisementResponse;
 import com.roomcrosscheck.listing.service.AdvertisementService;
@@ -48,6 +49,10 @@ public class AdvertisementController {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> error(ResponseStatusException error) {
+        if (error instanceof ExtractionFailure failure) {
+            return ResponseEntity.status(failure.getStatusCode())
+                .body(Map.of("code", failure.code(), "message", failure.getReason()));
+        }
         String message = error.getStatusCode().is4xxClientError() && error.getReason() != null
             ? error.getReason() : "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
         return ResponseEntity.status(error.getStatusCode()).body(Map.of("message", message));

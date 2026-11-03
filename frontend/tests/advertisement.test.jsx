@@ -121,3 +121,50 @@ test("oversized image is explained before transmitting it", async () => {
   expect(input.files[0]).toBe(image);
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
+
+test.each([
+  [502, "INVALID_RESPONSE", "AI 응답 형식이 올바르지 않아"],
+  [502, "NO_READABLE_TEXT", "읽을 수 있는 글자를 찾지 못했습니다"],
+  [504, "TIMEOUT", "응답 시간이 초과"],
+  [502, "AUTHENTICATION_FAILED", "인증 또는 접근 권한"],
+  [502, "CONNECTION_FAILED", "AI 서비스에 연결하지 못했습니다"],
+  [429, "RATE_LIMITED", "사용 한도"],
+  [502, "UNKNOWN_CODE", "AI 추출을 완료하지 못했습니다"],
+  [502, "constructor", "AI 추출을 완료하지 못했습니다"],
+])("extraction %s/%s explains failure safely and can retry", async (status, code, expected) => {
+  const pending = { id: "retry-extraction", status: "EXTRACTION_PENDING", originalText: "보관 원문" };
+  const failed = { ...pending, status: "EXTRACTION_FAILED" };
+  const ready = { ...pending, status: "EXTRACTION_READY", extraction: { rawText: "보관 원문", monthlyRentWon: null } };
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce({ ok: true, json: async () => [pending] })
+    .mockResolvedValueOnce({ ok: false, status, json: async () => ({ code, message: "private provider details" }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => [failed] })
+    .mockResolvedValueOnce({ ok: true, json: async () => ready })
+    .mockResolvedValueOnce({ ok: true, json: async () => [ready] });
+  const user = userEvent.setup();
+  render(<AdDraftPanel />);
+  await user.click(await screen.findByRole("button", { name: "Gemini 추출 시작" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(expected);
+  expect(screen.queryByText(/private provider details/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "확인한 값 저장" })).not.toBeInTheDocument();
+  await user.click(await screen.findByRole("button", { name: "Gemini 추출 재시도" }));
+  expect(await screen.findByRole("button", { name: "확인한 값 저장" })).toBeInTheDocument();
+  expect(screen.getByLabelText("월세 (원)")).toHaveValue(null);
+});
+
+test("HTML timeout responses and browser connection failures use safe explanations", async () => {
+  const pending = { id: "offline-extraction", status: "EXTRACTION_PENDING", originalText: "원본 보존" };
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce({ ok: true, json: async () => [pending] })
+    .mockResolvedValueOnce({ ok: false, status: 504, json: async () => { throw new SyntaxError("HTML body"); } })
+    .mockResolvedValueOnce({ ok: true, json: async () => [pending] })
+    .mockRejectedValueOnce(new TypeError("private transport details"))
+    .mockResolvedValueOnce({ ok: true, json: async () => [pending] });
+  const user = userEvent.setup();
+  render(<AdDraftPanel />);
+  await user.click(await screen.findByRole("button", { name: "Gemini 추출 시작" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("응답 시간이 초과");
+  await user.click(screen.getByRole("button", { name: "Gemini 추출 시작" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("추출 서버에 연결하지 못했습니다");
+  expect(screen.queryByText(/private transport/)).not.toBeInTheDocument();
+});

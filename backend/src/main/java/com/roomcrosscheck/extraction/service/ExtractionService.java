@@ -1,6 +1,8 @@
 package com.roomcrosscheck.extraction.service;
 
 import com.roomcrosscheck.extraction.client.ExtractionProvider;
+import com.roomcrosscheck.extraction.client.ExtractionFailure;
+import static com.roomcrosscheck.extraction.client.ExtractionFailure.Kind.*;
 import com.roomcrosscheck.extraction.dto.ExtractionResult;
 import com.roomcrosscheck.listing.domain.Advertisement;
 import com.roomcrosscheck.listing.dto.AdvertisementResponse;
@@ -46,23 +48,19 @@ public class ExtractionService {
             if (ad.status == Advertisement.Status.REVIEWED)
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 확인한 결과입니다.");
             if (ad.status == Advertisement.Status.EXTRACTION_READY) return AdvertisementResponse.from(ad);
-            byte[] image = null;
-            if (ad.imageStorageKey != null) {
-                try { image = Files.readAllBytes(storageDirectory.resolve(ad.imageStorageKey)); }
-                catch (IOException e) {
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "저장된 광고 이미지를 읽지 못했습니다.");
-                }
-            }
             try {
+                byte[] image = null;
+                if (ad.imageStorageKey != null) {
+                    try { image = Files.readAllBytes(storageDirectory.resolve(ad.imageStorageKey)); }
+                    catch (IOException e) { throw new ExtractionFailure(SOURCE_UNAVAILABLE); }
+                }
                 ExtractionResult result;
                 try {
                     result = validate(provider.extract(ad.originalText, ad.addressHint,
                         ad.unitLabel, image, ad.imageContentType));
                 } catch (ResponseStatusException e) {
                     if (e.getStatusCode() != HttpStatus.BAD_REQUEST) throw e;
-                    throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                        "Gemini가 허용 범위 밖의 값을 반환했습니다.");
+                    throw new ExtractionFailure(INVALID_VALUES);
                 }
                 ad.extractionJson = json(result);
                 ad.extractionError = null;

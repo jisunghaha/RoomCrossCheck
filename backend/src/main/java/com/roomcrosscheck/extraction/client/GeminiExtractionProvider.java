@@ -18,8 +18,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Base64;
+import static com.roomcrosscheck.extraction.client.ExtractionFailure.Kind.*;
 
 @Component
 public class GeminiExtractionProvider implements ExtractionProvider {
@@ -70,8 +72,7 @@ public class GeminiExtractionProvider implements ExtractionProvider {
     public ExtractionResult extract(String originalText, String addressHint,
             String unitLabel, byte[] image, String imageContentType) {
         if (!enabled || apiKey.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                "Gemini 추출이 설정되지 않았습니다. 로컬 환경변수를 확인해 주세요.");
+            throw new ExtractionFailure(CONFIGURATION_MISSING);
         }
         if (!model.matches("[A-Za-z0-9._-]+"))
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Gemini 모델 설정이 올바르지 않습니다.");
@@ -94,24 +95,59 @@ public class GeminiExtractionProvider implements ExtractionProvider {
                 .header("x-goog-api-key", apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request)))
                 .build();
-            var response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response;
+            try {
+                response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            } catch (HttpTimeoutException e) {
+                throw new ExtractionFailure(TIMEOUT);
+            } catch (IOException e) {
+                throw new ExtractionFailure(CONNECTION_FAILED);
+            }
             if (response.statusCode() == 429)
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Gemini 무료 사용 한도에 도달했습니다.");
+                throw new ExtractionFailure(RATE_LIMITED);
+            if (response.statusCode() == 401 || response.statusCode() == 403)
+                throw new ExtractionFailure(AUTHENTICATION_FAILED);
+            if (response.statusCode() == 408 || response.statusCode() == 504)
+                throw new ExtractionFailure(TIMEOUT);
             if (response.statusCode() < 200 || response.statusCode() >= 300)
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Gemini 추출 요청이 실패했습니다. 상태: " + response.statusCode());
+                throw new ExtractionFailure(PROVIDER_UNAVAILABLE);
             JsonNode root = mapper.readTree(response.body());
             JsonNode content = root.path("candidates").path(0).path("content").path("parts").path(0).path("text");
-            if (!content.isTextual()) throw new IOException("Missing Gemini output");
+            if (!content.isTextual()) throw new ExtractionFailure(INVALID_RESPONSE);
+            validateResponse(mapper.readTree(content.asString()));
             return mapper.readerFor(ExtractionResult.class).without(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+                .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
                 .readValue(content.asString());
         } catch (ResponseStatusException e) {
             throw e;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Gemini 요청이 중단됐습니다.");
-        } catch (IOException | JacksonException | IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Gemini 응답을 처리하지 못했습니다.");
+            throw new ExtractionFailure(INTERRUPTED);
+        } catch (JacksonException | IllegalArgumentException e) {
+            throw new ExtractionFailure(INVALID_RESPONSE);
         }
+    }
+
+    private static void validateResponse(JsonNode value) {
+        if (value == null || !value.isObject()) throw new ExtractionFailure(INVALID_RESPONSE);
+        // Core keys must be present. Explicit null means unmentioned, not a broken response.
+        for (String key : new String[]{"rawText", "address", "depositWon", "monthlyRentWon",
+                "maintenanceFeeWon", "areaSqm", "floor"}) {
+            if (!value.has(key)) throw new ExtractionFailure(INVALID_RESPONSE);
+        }
+        if (!value.path("rawText").isTextual()) throw new ExtractionFailure(INVALID_RESPONSE);
+        if (value.path("rawText").asString().isBlank()) throw new ExtractionFailure(NO_READABLE_TEXT);
+        JsonNode address = value.path("address");
+        if (!address.isNull() && !address.isTextual()) throw new ExtractionFailure(INVALID_RESPONSE);
+        for (String key : new String[]{"depositWon", "monthlyRentWon", "maintenanceFeeWon", "floor"}) {
+            JsonNode number = value.path(key);
+            if (!number.isNull() && !number.isIntegralNumber()) throw new ExtractionFailure(INVALID_RESPONSE);
+        }
+        JsonNode area = value.path("areaSqm");
+        if (!area.isNull() && !area.isNumber()) throw new ExtractionFailure(INVALID_RESPONSE);
+        // Keep compatibility with responses predating areaType/options; stored JSON is untouched.
+        JsonNode type = value.path("areaType");
+        if (!type.isMissingNode() && !type.isNull() && !type.isTextual())
+            throw new ExtractionFailure(INVALID_RESPONSE);
     }
 }

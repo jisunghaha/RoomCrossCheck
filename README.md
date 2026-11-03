@@ -74,6 +74,8 @@ VITE_DATA_MODE=listing-api VITE_API_BASE_URL=/api npm run dev
 
 외부 생성 요청은 기본적으로 꺼져 있습니다. 무료 계정·모델 한도를 확인한 경우에만 `GEMINI_ENABLED=true`로 활성화합니다. 키는 서버 환경으로만 전달하며 `.env`·시크릿은 Git에 넣지 않습니다. 기본 모델은 실제 성공 기록이 있는 `gemini-3.5-flash-lite`입니다. 기존 smoke-002~006 광고는 재호출하지 않습니다.
 
+새 추출 응답은 핵심 필드·자료형을 검사하며 빈 JSON과 읽힌 글자 없는 응답을 성공으로 저장하지 않습니다. 시간 초과·인증·사용 한도·연결·응답 오류를 구분해 안내하고 원본을 보존해 사용자가 재시도할 수 있습니다. [응답 검증·실패 처리](docs/sfr003/EXTRACTION_FAILURES.md)를 참고하세요.
+
 일반 `dev-up.sh`는 상속된 `HTTPS_PROXY`와 공개 CA `CODEX_PROXY_CERT` 또는 `JAVA_PROXY_CA_FILE`로 `.runtime/compose.java-runtime.json`을 생성합니다. 컨테이너 진입점이 Java 프록시·CA를 적용하고 TLS 검증을 유지합니다. API 키는 이 생성 파일에 넣지 않습니다. 프록시가 없으면 기본 Java 신뢰 설정을 사용합니다. Docker 설정·레지스트리 인증은 유지합니다.
 
 ```sh

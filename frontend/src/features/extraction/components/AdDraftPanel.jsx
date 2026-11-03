@@ -26,6 +26,32 @@ async function uploadError(response) {
   return "원본을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.";
 }
 
+async function extractionError(response) {
+  const failures = {
+    CONFIGURATION_MISSING: [503, "Gemini 추출 설정이 없습니다. 서버 설정을 확인해 주세요."],
+    AUTHENTICATION_FAILED: [502, "AI 서비스 인증 또는 접근 권한을 확인해 주세요."],
+    RATE_LIMITED: [429, "AI 서비스 사용 한도에 도달했습니다. 잠시 후 다시 시도해 주세요."],
+    PROVIDER_UNAVAILABLE: [502, "AI 서비스가 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."],
+    TIMEOUT: [504, "AI 서비스 응답 시간이 초과됐습니다. 잠시 후 다시 시도해 주세요."],
+    CONNECTION_FAILED: [502, "AI 서비스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."],
+    INVALID_RESPONSE: [502, "AI 응답 형식이 올바르지 않아 결과를 저장하지 않았습니다. 다시 시도해 주세요."],
+    NO_READABLE_TEXT: [502, "광고에서 읽을 수 있는 글자를 찾지 못했습니다. 더 선명한 이미지나 광고 글로 다시 등록해 주세요."],
+    INVALID_VALUES: [502, "AI가 허용 범위 밖의 값을 반환해 결과를 저장하지 않았습니다. 다시 시도해 주세요."],
+    SOURCE_UNAVAILABLE: [500, "저장된 광고 이미지를 읽지 못했습니다. 원본 보관 상태를 확인해 주세요."],
+    INTERRUPTED: [502, "AI 추출 요청이 중단됐습니다. 잠시 후 다시 시도해 주세요."],
+  };
+  try {
+    const body = await response.json();
+    const known = Object.hasOwn(failures, body?.code) ? failures[body.code] : null;
+    if (known && known[0] === response.status) return known[1];
+  } catch { /* Unknown bodies are never displayed as provider error details. */ }
+  if (response.status === 503) return failures.CONFIGURATION_MISSING[1];
+  if (response.status === 429) return failures.RATE_LIMITED[1];
+  if (response.status === 504) return failures.TIMEOUT[1];
+  if (response.status === 409) return "추출 상태가 변경됐거나 이미 추출 중입니다. 목록을 확인한 뒤 다시 시도해 주세요.";
+  return "AI 추출을 완료하지 못했습니다. 원본은 보존됩니다. 잠시 후 다시 시도해 주세요.";
+}
+
 function ReviewForm({ draft, busy, onSave }) {
   const result = draft.reviewed || draft.extraction;
   const [optionText, setOptionText] = useState(() => optionsText(result?.options));
@@ -124,12 +150,13 @@ export default function AdDraftPanel({ onRegister }) {
   async function extract(id) {
     setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch(`/api/advertisements/${encodeURIComponent(id)}/extract`, { method: "POST" });
-      if (!response.ok) {
-        if (response.status === 503) throw new Error("서버에 Gemini 추출 설정이 없습니다. 로컬 환경변수를 확인해 주세요.");
-        if (response.status === 429) throw new Error("Gemini 사용 한도에 도달했습니다. 나중에 다시 시도해 주세요.");
-        throw new Error(`추출에 실패했어요. (${response.status})`);
+      let response;
+      try {
+        response = await fetch(`/api/advertisements/${encodeURIComponent(id)}/extract`, { method: "POST" });
+      } catch {
+        throw new Error("추출 서버에 연결하지 못했습니다. 원본은 보존됩니다. 연결을 확인하고 다시 시도해 주세요.");
       }
+      if (!response.ok) throw new Error(await extractionError(response));
       await refresh();
       setMessage("추출 결과가 도착했어요. 원본과 비교해 확인해 주세요.");
     } catch (cause) { setError(cause.message); await refresh().catch(() => {}); }
