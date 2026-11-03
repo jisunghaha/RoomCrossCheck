@@ -17,9 +17,10 @@ function ReviewForm({ draft, busy, onSave }) {
       rawText: data.get("rawText"), address: data.get("address") || null,
       depositWon: numeric("depositWon"), monthlyRentWon: numeric("monthlyRentWon"),
       maintenanceFeeWon: numeric("maintenanceFeeWon"), areaSqm: numeric("areaSqm"), floor: numeric("floor"),
+      areaType: data.get("areaType"),
     });
   }}>
-    <p>AI 결과를 원본 광고와 비교하고 틀린 값을 고쳐 주세요. 빈칸은 확인되지 않은 값입니다.</p>
+    <p>AI 결과를 원본 광고와 비교하고 틀린 값을 고쳐 주세요. 빈칸은 확인되지 않은 값입니다. 면적 종류가 불명확하면 미상으로 유지해 주세요.</p>
     <label>읽은 광고 글<textarea name="rawText" rows="3" maxLength="10000" defaultValue={result?.rawText || ""} /></label>
     <div className="form-grid">
       <label>주소<input name="address" maxLength="160" defaultValue={result?.address || ""} /></label>
@@ -27,6 +28,9 @@ function ReviewForm({ draft, busy, onSave }) {
       <label>월세 (원)<input name="monthlyRentWon" type="number" min="0" max="1000000000000" step="1" defaultValue={number(result?.monthlyRentWon)} /></label>
       <label>관리비 (원)<input name="maintenanceFeeWon" type="number" min="0" max="1000000000000" step="1" defaultValue={number(result?.maintenanceFeeWon)} /></label>
       <label>면적 (㎡)<input name="areaSqm" type="number" min="0" max="100000" step="any" defaultValue={number(result?.areaSqm)} /></label>
+      <label>면적 종류<select name="areaType" defaultValue={result?.areaType ?? "미상"}>
+        {["전용", "공급", "미상"].map(type => <option key={type} value={type}>{type}</option>)}
+      </select></label>
       <label>층수 (지하는 음수)<input name="floor" type="number" min="-20" max="200" step="1" defaultValue={number(result?.floor)} /></label>
     </div>
     <button className="secondary" type="submit" disabled={busy}>확인한 값 저장</button>

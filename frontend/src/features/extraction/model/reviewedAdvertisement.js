@@ -7,7 +7,7 @@ export function reviewedAdvertisementValues(draft) {
     name: "", address: value.address ?? "",
     deposit: value.depositWon ?? null, rent: value.monthlyRentWon ?? null,
     fee: value.maintenanceFeeWon ?? null, area: value.areaSqm ?? null,
-    floor: value.floor ?? null, areaType: "미상",
+    floor: value.floor ?? null, areaType: value.areaType ?? "미상",
     original: draft.originalText || value.rawText || "",
   };
 }

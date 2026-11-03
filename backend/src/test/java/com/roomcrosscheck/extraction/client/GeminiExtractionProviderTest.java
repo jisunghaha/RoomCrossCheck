@@ -67,9 +67,37 @@ class GeminiExtractionProviderTest {
             var result = provider.extract("", null, null, new byte[]{1, 2, 3}, "image/png");
             assertEquals("test-key", key.get());
             assertEquals(420_000L, result.monthlyRentWon());
+            assertEquals("미상", result.areaType());
             var request = JsonMapper.builder().build().readTree(requestBody.get());
             assertEquals("AQID", request.path("contents").path(0).path("parts").path(1)
                 .path("inline_data").path("data").asText());
+        } finally { server.stop(0); }
+    }
+
+    @Test void parsesExplicitAreaTypesAndUsesUnknownForNull() throws Exception {
+        var mapper = JsonMapper.builder().build();
+        var output = new AtomicReference<String>();
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1beta/models/local-stub:generateContent", exchange -> {
+            exchange.getRequestBody().readAllBytes();
+            var root = mapper.createObjectNode();
+            root.putArray("candidates").addObject().putObject("content")
+                .putArray("parts").addObject().put("text", output.get());
+            byte[] bytes = mapper.writeValueAsBytes(root);
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+        try {
+            var provider = new GeminiExtractionProvider(mapper, "local-test-key", "local-stub",
+                "http://127.0.0.1:" + server.getAddress().getPort() + "/v1beta", true);
+            for (String type : new String[]{"전용", "공급", "미상"}) {
+                output.set(mapper.writeValueAsString(java.util.Map.of("areaSqm", 23, "areaType", type)));
+                assertEquals(type, provider.extract("면적 검증", null, null, null, null).areaType());
+            }
+            output.set("{\"areaSqm\":23,\"areaType\":null}");
+            assertEquals("미상", provider.extract("면적 검증", null, null, null, null).areaType());
         } finally { server.stop(0); }
     }
 }

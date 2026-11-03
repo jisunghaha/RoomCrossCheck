@@ -29,7 +29,7 @@ test("shows Gemini results for user correction before saving reviewed values", a
   const ready = {
     id: "ad-2", status: "EXTRACTION_READY", originalText: "월세 42만원", imageName: null,
     extraction: { rawText: "월세 42만원", address: null, depositWon: null,
-      monthlyRentWon: 420000, maintenanceFeeWon: null, areaSqm: null, floor: null },
+      monthlyRentWon: 420000, maintenanceFeeWon: null, areaSqm: null, floor: null, areaType: "전용" },
   };
   const fetchMock = vi.spyOn(globalThis, "fetch")
     .mockResolvedValueOnce({ ok: true, json: async () => [ready] })
@@ -38,12 +38,15 @@ test("shows Gemini results for user correction before saving reviewed values", a
   const user = userEvent.setup();
   render(<AdDraftPanel />);
   const rent = await screen.findByLabelText("월세 (원)");
+  expect(screen.getByLabelText("면적 종류")).toHaveValue("전용");
+  await user.selectOptions(screen.getByLabelText("면적 종류"), "공급");
   await user.clear(rent);
   await user.type(rent, "430000");
   await user.click(screen.getByRole("button", { name: "확인한 값 저장" }));
   expect(await screen.findByText("확인한 추출 값을 저장했어요.")).toBeInTheDocument();
   expect(fetchMock.mock.calls[1][0]).toBe("/api/advertisements/ad-2/extraction");
   expect(JSON.parse(fetchMock.mock.calls[1][1].body).monthlyRentWon).toBe(430000);
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body).areaType).toBe("공급");
 });
 
 test("missing Gemini configuration is shown without pretending extraction succeeded", async () => {

@@ -8,7 +8,8 @@ const record = JSON.parse(await readFile("docs/sfr003/image-001-result.json", "u
 const resultPath = "docs/sfr003/image-001-replay-result.json";
 const afterRestart = process.argv.includes("--after-restart");
 const name = "서교동 이미지 재생 검증 매물";
-const reviewed = { ...record.extraction, monthlyRentWon: 510000 };
+const expectedExtraction = { ...record.extraction, areaType: record.extraction.areaType ?? "미상" };
+const reviewed = { ...expectedExtraction, monthlyRentWon: 510000 };
 const screenshot = resolve(`.runtime/sfr003-image-001/${afterRestart ? "after-restart" : "saved"}.png`);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
   headless: true, args: ["--no-sandbox"] });
@@ -49,10 +50,10 @@ try {
     assert.equal(await rent.inputValue(), "500000");
     [ad] = await get("advertisements");
     assert.equal(ad.status, "EXTRACTION_READY");
-    assert.deepEqual(ad.extraction, record.extraction);
+    assert.deepEqual(ad.extraction, expectedExtraction);
     const cached = await page.request.post(`/api/advertisements/${ad.id}/extract`);
     assert.equal(cached.status(), 200);
-    assert.deepEqual((await cached.json()).extraction, record.extraction);
+    assert.deepEqual((await cached.json()).extraction, expectedExtraction);
     assert.equal(await page.getByRole("button", { name: "확인한 값으로 매물 등록", exact: true }).count(), 0);
     await rent.fill("510000"); // 수정 보존 검증용 값이며 실제 광고의 정답은 50만원이다.
     await page.getByRole("button", { name: "확인한 값 저장", exact: true }).click();
@@ -90,7 +91,7 @@ try {
   assert.equal(ads.length, 1);
   const [ad] = ads;
   assert.equal(ad.status, "REVIEWED");
-  assert.deepEqual(ad.extraction, record.extraction);
+  assert.deepEqual(ad.extraction, expectedExtraction);
   assert.deepEqual(ad.reviewed, reviewed);
   assert.ok(!ad.originalText);
   const blocked = await page.request.post(`/api/advertisements/${ad.id}/extract`);

@@ -105,7 +105,7 @@ multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최�
 
 추출은 `DRAFT`에서 요청하면 409입니다. `EXTRACTION_PENDING` 또는 `EXTRACTION_FAILED`에서 명시적으로 호출하며, 같은 광고의 중복 진행 요청은 409입니다. 이미 `EXTRACTION_READY`면 저장된 결과를 돌려주고 API를 다시 호출하지 않습니다. 키가 비어 있거나 `GEMINI_ENABLED=false`면 503으로 거부하며 상태를 바꾸지 않습니다. Gemini 한도 초과는 429, 그 밖의 원격 응답·파싱 실패는 502로 표시하고 `EXTRACTION_FAILED`로 저장합니다. 재시도는 다시 `extract`를 호출합니다.
 
-추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null)입니다. 확인 요청은 이 일곱 필드를 JSON 본문에 담습니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
+추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null), `areaType`(전용·공급·미상)입니다. 확인 요청은 이 여덟 필드를 JSON 본문에 담습니다. 기존 요청이나 저장 JSON에서 areaType이 생략되거나 null이면 미상으로 읽으며 기존 JSON을 자동 수정하지 않습니다. 허용하지 않는 종류는 확인 요청에서 400, 공급자 결과에서 502로 거부합니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
 
 Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 실제 생성 응답 HTTP 200과 정답 6개 필드 일치를 확인한 `gemini-3.5-flash-lite`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 기존 2.5 Flash·2.5 Flash Lite는 신규 사용자 지원 종료로 404를 반환했고, 3.8 Flash·Flash Latest는 혼잡으로 503을 반환했습니다. 모델 목록에 존재하는 것과 생성 가능 여부는 다릅니다. 무료 등급·해당 모델의 사용 가능 여부를 확인하고, 불확실하면 호출하지 않습니다. 현재 로그인·소유권 검증이 없어 이 API도 로컬 개발 전용입니다. 실제 호출 기록과 가짜 서버 검증 범위는 [SFR-003 검증 기록](../sfr003/VALIDATION.md)을 참고하세요.
 
@@ -113,7 +113,7 @@ Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED
 
 `REVIEWED` 상태이면서 `reviewed` 값이 있는 광고에만 ‘확인한 값으로 매물 등록’ 버튼이 표시됩니다. 마지막으로 저장한 확인 값을 기존 매물 폼에 채우며, 클릭만으로 매물을 저장하지 않습니다. 수정 중인 확인 값은 먼저 저장해야 반영됩니다. 사용자가 이름·누락 주소·면적 종류를 확인하고 수정한 뒤 `/api/listings`에 저장합니다. 금액은 원 → 화면의 만원 → 저장 시 정수 원으로 변환하며, null·0·지하층을 유지합니다. 주소 힌트와 미확인 AI 값으로 빈칸을 추론하지 않습니다.
 
-광고 값은 건축물대장 공식 정보가 아니며 `official`에 넣지 않습니다. 면적 종류는 추출 스키마에 없어 ‘미상’으로 시작합니다. 등록 시 원문은 글 광고 원본, 글이 없는 이미지 광고는 사용자가 확인한 OCR 글을 사용합니다. 원문 제한은 추출과 동일하게 10,000자로, 지하층은 -20까지 맞췄습니다. 로컬 JPA `ddl-auto=update`로 컬럼이 확장되며 운영 환경에는 명시적인 스키마 마이그레이션이 필요합니다. 광고 ID와 매물 ID의 영구 연결·중복 등록 방지는 후속 범위입니다.
+광고 값은 건축물대장 공식 정보가 아니며 `official`에 넣지 않습니다. 면적 종류는 광고에 명시된 전용·공급을 사용하며, 불명확하면 미상으로 유지합니다. 확인 화면에서 저장한 종류를 매물 폼에 전달하고, 최종 폼의 수정값은 광고 확인값과 별도로 저장합니다. 등록 시 원문은 글 광고 원본, 글이 없는 이미지 광고는 사용자가 확인한 OCR 글을 사용합니다. 원문 제한은 추출과 동일하게 10,000자로, 지하층은 -20까지 맞췄습니다. 로컬 JPA `ddl-auto=update`로 컬럼이 확장되며 운영 환경에는 명시적인 스키마 마이그레이션이 필요합니다. 개발용 광고 ID와 매물 ID의 연결·중복 방지는 아래 2026-11-03 계약을 따릅니다.
 
 일반 실행은 `scripts/dev-up.sh` → 공개 runtime Compose 설정 생성 → `backend/docker-entrypoint.sh`의 Java 프록시·CA 적용 경로를 사용합니다. 외부 생성 API는 여전히 명시적인 `GEMINI_ENABLED=true` 설정이 필요합니다. 실제 Chromium에서 Vite 프록시·Spring Boot·MySQL을 거친 사용자 확인과 매물 등록 흐름을 로컬 추출 서버로 검증했습니다. 이번 검증은 실제 Gemini 광고를 재요청하지 않았습니다.
 
@@ -138,3 +138,9 @@ Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED
 - 현재 로그인·광고 소유권은 미구현이다. 이 연결을 실제 사용자 소유권 검증으로 해석하지 않는다.
 
 기존 로컬 개발 DB는 JPA update 방식이며 이 보완도 별도 임시 DB에서 검증했다. 팀 V1 수정·기존 DB 이관·자동 자료 역추적은 수행하지 않았다. 팀 DB로 통합할 때는 별도 migration과 API 합의가 필요하다.
+
+## 2026-11-03 면적 종류 추출·확인 계약 보완
+
+계획서 SFR-003·004의 면적 종류 요구사항을 반영했다. Gemini 프롬프트는 반환한 면적과 연결된 전용·공급 구분이 원문에 명시된 경우만 사용하고 불명확하면 미상으로 반환하도록 요구한다. 이 프롬프트 지침이 실제 광고에서 지켜지는 정확도는 별도 검증 대상이다.
+
+공급자 DTO → 광고 추출 JSON → 사용자 확인 JSON → 매물 입력 폼 → 최종 listings.areaType으로 이어진다. 각 단계에서 사용자가 변경한 값은 이전 단계의 원본을 덮어쓰지 않는다. 기존 면적 숫자·금액·null/0·층수 계약과 URL은 유지한다. 추가 DB 컬럼·migration은 없다. /rooms와 팀 DB의 EXCLUSIVE/SUPPLY/UNKNOWN 규약은 이번 작업에서 변경하지 않는다.

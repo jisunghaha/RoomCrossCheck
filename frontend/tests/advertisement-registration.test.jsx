@@ -12,7 +12,7 @@ const draft = {
   originalText: "가상 광고 원문", reviewedAt: "2026-10-14T00:00:00Z",
   extraction: { monthlyRentWon: 990000, address: "AI 주소" },
   reviewed: { rawText: "확인한 OCR 글", address: null, depositWon: null,
-    monthlyRentWon: 123456, maintenanceFeeWon: 0, areaSqm: 20, floor: -20 },
+    monthlyRentWon: 123456, maintenanceFeeWon: 0, areaSqm: 20, floor: -20, areaType: "공급" },
 };
 
 async function openAdvertisements(user = userEvent) {
@@ -24,7 +24,7 @@ test("only persisted reviewed values can prefill; hints and official data are ex
   expect(reviewedAdvertisementValues({ ...draft, status: "EXTRACTION_READY" })).toBeNull();
   expect(reviewedAdvertisementValues({ ...draft, reviewed: null })).toBeNull();
   expect(reviewedAdvertisementValues(draft)).toEqual({ name: "", address: "", deposit: null,
-    rent: 123456, fee: 0, area: 20, areaType: "미상", floor: -20, original: "가상 광고 원문" });
+    rent: 123456, fee: 0, area: 20, areaType: "공급", floor: -20, original: "가상 광고 원문" });
   expect(reviewedAdvertisementValues({ ...draft, originalText: "", reviewed: { ...draft.reviewed, rawText: "이미지 OCR" } }).original).toBe("이미지 OCR");
 });
 
@@ -54,6 +54,7 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
   expect(dialog.getByLabelText("보증금 (만원)")).toHaveValue(null);
   expect(dialog.getByLabelText("주소 / 건물명 *")).toHaveValue("");
   expect(dialog.getByLabelText("층수")).toHaveValue(-20);
+  expect(dialog.getByLabelText("면적 종류")).toHaveValue("공급");
   expect(dialog.getByText(/광고 값은 건축물대장 공식 정보가 아닙니다/)).toBeInTheDocument();
   expect(requests.filter(([, o]) => o.method === "POST")).toHaveLength(0);
   await user.type(dialog.getByLabelText("매물 이름 *"), "가상 확인 매물");
@@ -71,7 +72,7 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
   await user.click(dialog.getByRole("button", { name: "확정 저장" }));
   expect(await screen.findByRole("button", { name: "가상 확인 매물" })).toBeInTheDocument();
   const payload = JSON.parse(requests.filter(([, o]) => o.method === "POST").at(-1)[1].body);
-  expect(payload).toMatchObject({ advertisementId: draft.id, deposit: null, rent: 123456, fee: 0, floor: -20, area: 21, areaType: "미상", original: "가상 광고 원문" });
+  expect(payload).toMatchObject({ advertisementId: draft.id, deposit: null, rent: 123456, fee: 0, floor: -20, area: 21, areaType: "공급", original: "가상 광고 원문" });
   expect(payload).not.toHaveProperty("official");
   expect(payload).not.toHaveProperty("userId");
   expect(requests.some(([url]) => url.endsWith("/extract"))).toBe(false);
@@ -101,4 +102,12 @@ test("an AI result awaiting review cannot open listing registration", async () =
   await openAdvertisements();
   await screen.findByText("추출 결과 확인 필요");
   expect(screen.queryByRole("button", { name: "확인한 값으로 매물 등록" })).not.toBeInTheDocument();
+});
+
+
+test("legacy reviewed results without an area type stay unknown while explicit types are retained", () => {
+  for (const type of [undefined, null, "미상", "전용", "공급"]) {
+    const input = { ...draft, reviewed: { ...draft.reviewed, areaType: type } };
+    expect(reviewedAdvertisementValues(input).areaType).toBe(type ?? "미상");
+  }
 });

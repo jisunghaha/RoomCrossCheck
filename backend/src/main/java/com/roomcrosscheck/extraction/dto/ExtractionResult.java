@@ -4,5 +4,9 @@ import java.math.BigDecimal;
 
 public record ExtractionResult(
     String rawText, String address, Long depositWon, Long monthlyRentWon,
-    Long maintenanceFeeWon, BigDecimal areaSqm, Integer floor
-) { }
+    Long maintenanceFeeWon, BigDecimal areaSqm, Integer floor, String areaType
+) {
+    public ExtractionResult {
+        if (areaType == null) areaType = "미상";
+    }
+}

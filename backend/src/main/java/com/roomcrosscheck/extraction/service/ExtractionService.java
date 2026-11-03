@@ -104,6 +104,7 @@ public class ExtractionService {
         money(value.maintenanceFeeWon());
         if (value.areaSqm() != null && (value.areaSqm().signum() < 0
                 || value.areaSqm().compareTo(new java.math.BigDecimal("100000")) > 0)) throw invalid();
+        if (!Set.of("전용", "공급", "미상").contains(value.areaType())) throw invalid();
         if (value.floor() != null && (value.floor() < -20 || value.floor() > 200)) throw invalid();
         return value;
     }

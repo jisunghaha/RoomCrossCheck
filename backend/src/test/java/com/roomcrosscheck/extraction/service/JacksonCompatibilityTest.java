@@ -53,11 +53,13 @@ class JacksonCompatibilityTest {
                 assertEquals(503, unavailable.getStatusCode().value());
 
                 var corrected = new ExtractionResult("월세 42만원", null, null,
-                    430000L, 0L, new BigDecimal("23.7500"), -2);
+                    430000L, 0L, new BigDecimal("23.7500"), -2, "공급");
                 var response = context.getBean(ExtractionService.class).review(ad.id, corrected);
                 var json = mapper.readTree(mapper.writeValueAsString(response));
                 assertTrue(json.path("extraction").has("depositWon"));
                 assertTrue(json.path("extraction").path("depositWon").isNull());
+                assertEquals("미상", response.extraction().areaType());
+                assertEquals("공급", response.reviewed().areaType());
                 assertEquals(420000, json.path("extraction").path("monthlyRentWon").asLong());
                 assertEquals(430000, json.path("reviewed").path("monthlyRentWon").asLong());
                 assertEquals(0, json.path("reviewed").path("maintenanceFeeWon").asLong());

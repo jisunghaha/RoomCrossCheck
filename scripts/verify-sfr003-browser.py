@@ -223,7 +223,8 @@ def replay_browser_flow(env, compose, opener, backend_port):
     assert listing_row["fee"] == 50000 and listing_row["deposit"] == 10000000
     assert listing_row["area"] == 17.5 and listing_row["floor"] == 1
     assert ad_row["originalText"] in (None, "")
-    assert ad_row["extraction"] == replay_record["extraction"]
+    assert ad_row["extraction"] == {**replay_record["extraction"],
+        "areaType": replay_record["extraction"].get("areaType") or "미상"}
     assert ad_row["reviewed"]["monthlyRentWon"] == 510000
     assert listing_row["original"] == ad_row["reviewed"]["rawText"]
 

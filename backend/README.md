@@ -24,3 +24,7 @@ Java 21·Spring Boot 4.1.1·MySQL 8.4 로컬 개발 API입니다. 루트의 `scr
 ## 2026-11-03 광고–매물 연결
 
 ListingService가 최종 생성 시 선택 advertisementId의 광고를 잠그고 REVIEWED·확인값·중복 여부를 검증한다. listings.advertisement_id에 nullable UNIQUE와 advertisements FK를 두며, 수정에서는 원본 연결을 보존한다. 기존 직접 입력·이전 PATCH 요청도 유지한다. 적용 범위는 기존 개발용 JPA 모델이며 팀 Flyway V1과 rooms 모델은 변경하지 않는다. 테스트는 16건 통과했고 별도 실제 MySQL에서 기존 매물·동시 등록·재시작 보존을 검증했다.
+
+## 면적 종류 호환성
+
+ExtractionResult에 areaType(전용·공급·미상)을 추가했다. 구버전 추출·확인 JSON의 항목 생략/null은 미상으로 읽으며 저장 JSON을 일괄 갱신하지 않는다. 공급자의 허용 밖 값은 502, 사용자 확인 요청의 허용 밖 값은 400으로 거부한다. 기존 광고 JSON 컬럼과 매물 areaType 컬럼을 사용하며 DB 구조는 바꾸지 않는다.
