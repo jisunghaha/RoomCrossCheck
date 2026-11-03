@@ -97,7 +97,7 @@ export function AuditBadge({ room }) {
       className={`badge ${!count ? "muted" : rate === 100 ? "good" : "warn"}`}
     >
       {rate === 100 && <Icon name="check" />}
-      {!count ? "대조 미실시" : rate === 100 ? "정보 일치" : "차이 확인 필요"}
+      {!count ? "대조 미실시" : rate === 100 ? "비교 항목 일치" : "차이 확인 필요"}
     </span>
   );
 }

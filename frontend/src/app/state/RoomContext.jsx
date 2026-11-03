@@ -99,6 +99,8 @@ export function RoomProvider({ children, repository: suppliedRepository }) {
         toast,
         notify,
         saveRoom,
+        searchOfficial: (id, query) => repository.searchOfficial(id, query),
+        saveOfficial: (id, selection) => persist("saveOfficial", [id, selection], (s, room) => ({ ...s, rooms: s.rooms.map(r => r.id === id ? room : r) }), "공식 정보를 저장하고 등록 정보와 비교했어요."),
         deleteRoom,
         toggleSelected,
         clearSelected: () => setSelected([]),

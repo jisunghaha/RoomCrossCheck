@@ -20,3 +20,6 @@ gemini:
   base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 server:
   address: 0.0.0.0
+building-register:
+  api-key: ${BUILDING_REGISTER_API_KEY:}
+  base-url: ${BUILDING_REGISTER_BASE_URL:https://apis.data.go.kr/1613000/BldRgstHubService}

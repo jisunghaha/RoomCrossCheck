@@ -4,7 +4,9 @@ import react from "@vitejs/plugin-react";
 export default defineConfig(({ mode }) => {
   const frontendDir = fileURLToPath(new URL(".", import.meta.url));
   const repositoryDir = fileURLToPath(new URL("..", import.meta.url));
-  const publicEnv = { ...loadEnv(mode, repositoryDir, "VITE_"), ...loadEnv(mode, frontendDir, "VITE_") };
+  const publicEnv = mode === "test"
+    ? { VITE_DATA_MODE: "local", VITE_API_BASE_URL: "/api" }
+    : { ...loadEnv(mode, repositoryDir, "VITE_"), ...loadEnv(mode, frontendDir, "VITE_") };
   return {
   plugins: [react()],
   define: {
