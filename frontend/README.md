@@ -19,3 +19,23 @@
 `frontend/.env`의 공개 설정을 우선하고 기존 루트 `.env`의 두 VITE 설정을 호환합니다. API 키와 DB 정보는 프론트 설정에 넣지 않습니다. 팀의 home·community·시연 로그인 기능은 이번 작업에서 복사하거나 구현하지 않았습니다. 원래 매물·비교·후기·방문 UI를 유지했습니다.
 
 팀의 등록 화면 단계 구조와 RoomForm의 initialValues/onPreview 계약을 참고해 현재 서버 광고 흐름을 연결했습니다. 팀 화면에서 local 시연용인 임시 매물 저장·이미지 미리보기와 달리, 현재 광고 원본은 기존 백엔드에 보관합니다. /rooms의 DRAFT·CONFIRMED 및 사용자 소유권 연결은 합의 전이며, 현재 /listings 저장을 그 계약으로 표시하지 않습니다.
+
+## 커뮤니티 — SFR-015·016
+
+`src/features/community`에서 화면, API 호출과 스타일을 관리합니다. 기존 매물·후기·방문 기능과 별도로
+커뮤니티 메뉴를 추가했으며 매물의 `local` 모드에서도 커뮤니티는 서버를 사용합니다.
+기존 화면을 복사하거나 사용자·로그인 기능을 중복 구현하지 않았습니다.
+
+화면 주소는 `#community`, `#community/new`, `#community/post/{id}`, `#community/post/{id}/edit`입니다.
+목록·상세·공지사항, 게시글 작성·수정·삭제, 댓글과 좋아요를 지원하며 실패 시 입력 내용을 유지합니다.
+`/api/community/session` 응답으로 버튼을 표시하고, 쓰기 권한은 백엔드 Service가 다시 확인합니다.
+로그인 공급자 미연동 상태에서는 공개 조회만 사용할 수 있습니다. 테스트 사용자 상태는 테스트에서만 주입합니다.
+
+커뮤니티 API는 같은 출처의 `/api/community`로 요청합니다. 개발 서버의 기존 `/api` 프록시를 사용하므로
+백엔드를 실행해야 하며, 다른 포트라면 개발 서버 프로세스의 `DEV_API_TARGET`을 설정합니다.
+배포 시에도 `/api`를 백엔드로 전달해야 합니다. 루트의 `VITE_API_BASE_URL`로 지정한 외부 주소로
+커뮤니티 요청을 직접 전송하지 않습니다. 서버 오류 시 브라우저 예시 데이터로 대체하지 않습니다.
+API 계약은 [커뮤니티 API 문서](../docs/api/COMMUNITY.md)를 참고하세요.
+
+검증 명령은 `npm --workspace frontend run test -- --configLoader runner --maxWorkers=2`와
+`npm --workspace frontend run build -- --configLoader runner`입니다. Windows PowerShell에서는 `npm.cmd`를 사용할 수 있습니다.

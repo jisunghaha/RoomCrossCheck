@@ -11,6 +11,7 @@ import ComparePage from "../features/comparison/pages/ComparePage.jsx";
 import ReviewsPage from "../features/review/pages/ReviewsPage.jsx";
 import VisitsPage from "../features/visit/pages/VisitsPage.jsx";
 import RegisterRoomPage from "../features/listing/pages/RegisterRoomPage.jsx";
+import CommunityPage from "../features/community/CommunityPage.jsx";
 export default function App() {
   const [page, navigate] = useHashRoute();
   const { rooms, deleteRoom, toast, loading, loadError, saving, reload, dataMode } = useRooms();
@@ -18,16 +19,17 @@ export default function App() {
     [visitRoom, setVisitRoom] = useState(null);
   const close = () => setModal(null),
     room = rooms.find((r) => r.id === modal?.id);
-  if (loading || loadError) return (
+  if (page !== "community" && (loading || loadError)) return (
     <main><p role={loadError ? "alert" : "status"}>{loadError || "매물을 불러오는 중이에요…"}</p>
       {loadError && <button onClick={reload}>다시 불러오기</button>}
     </main>
   );
   return (
     <>
-      <fieldset disabled={saving} className="data-operation-boundary" aria-busy={saving}>
+      <fieldset disabled={page !== "community" && saving} className="data-operation-boundary" aria-busy={page !== "community" && saving}>
       <Layout page={page} onGuide={() => setModal({ type: "guide" })}>
         {page === "register" && <RegisterRoomPage navigate={navigate} />}
+        {page === "community" && <CommunityPage />}
         {page === "rooms" && (
           <RoomsPage
             onAdd={() => navigate("register")}

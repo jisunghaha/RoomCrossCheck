@@ -1,0 +1,57 @@
+.community .primary, .community .secondary { display: inline-flex; align-items: center; justify-content: center; }
+.community-session { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 0 24px; color: #53665b; }
+.community-session p { line-height: 1.8; }
+.community-session .text-button { flex-shrink: 0; }
+.community .panel { margin-bottom: 22px; }
+.community .section-title { margin-bottom: 14px; }
+.community-post-row { display: flex; align-items: center; gap: 24px; padding: 25px 0; border-top: 1px solid var(--line); }
+.community-post-row:hover h3 { color: var(--green); text-decoration: underline; text-underline-offset: 4px; }
+.community-post-copy { flex: 1; min-width: 0; }
+.community-post-copy h3 { margin: 8px 0; overflow-wrap: anywhere; line-height: 1.6; }
+.community-post-copy p { color: #718077; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.community-kind { display: inline-block; font-size: 11px; font-weight: 700; color: #65776a; letter-spacing: .2px; }
+.community-kind.is-notice { color: #307258; background: #edf3ed; padding: 4px 9px; border-radius: 5px; }
+.community-meta { display: flex; flex-direction: column; gap: 7px; color: #718077; font-size: 12px; }
+.community-meta time { font-size: 11px; }
+.community-state { padding: 25px 0; color: #65776a; line-height: 1.8; }
+.community-error { padding: 14px 16px; margin: 12px 0; border: 1px solid #e6cfc7; border-radius: 9px; color: #854c38; background: #fff8f4; line-height: 1.8; overflow-wrap: anywhere; }
+.community-error button { margin-top: 10px; }
+.community-pagination { display: flex; align-items: center; justify-content: center; gap: 20px; padding-top: 24px; }
+.community-pagination span { color: #65776a; font-size: 12px; }
+.community-back { margin: 3px 0 21px; }
+.community-detail h2 { margin: 15px 0; font-size: 26px; line-height: 1.6; overflow-wrap: anywhere; }
+.community-detail-meta { display: flex; flex-wrap: wrap; gap: 10px 22px; color: #718077; font-size: 12px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.community-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 2; }
+.community-detail > .community-body { padding: 32px 0 40px; min-height: 180px; }
+.community-detail-actions { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.community-inline-actions { display: flex; flex-wrap: wrap; gap: 16px; }
+.community-like.is-liked { background: #edf3ed; color: #307258; border-color: #8db99f; }
+.community-editor h2 { margin-bottom: 25px; }
+.community-editor fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.community .field { margin-bottom: 20px; }
+.community textarea { resize: vertical; line-height: 1.8; }
+.community-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.community-notice-option { display: flex; align-items: center; gap: 9px; }
+.community-comment { border-top: 1px solid var(--line); padding: 23px 0; }
+.community-comment-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; }
+.community-comment-head time { color: #718077; font-size: 11px; }
+.community-comment-head .community-inline-actions { margin-left: auto; }
+.community-comment-form { padding-top: 24px; margin-top: 12px; border-top: 1px solid var(--line); }
+.community .empty strong { display: block; margin-bottom: 10px; }
+.community .empty a { color: var(--green); text-decoration: underline; }
+@media (max-width: 700px) {
+  .community-session { align-items: flex-start; flex-direction: column; gap: 9px; }
+  .community-post-row { flex-wrap: wrap; gap: 12px; }
+  .community-post-copy { flex-basis: calc(100% - 50px); }
+  .community-post-row > svg { display: none; }
+  .community-meta { flex-direction: row; flex-wrap: wrap; width: 100%; }
+  .community-detail h2 { font-size: 22px; }
+  .community-detail-actions { align-items: flex-start; flex-direction: column; }
+  .community-comment-head .community-inline-actions { margin-left: 0; width: 100%; }
+  .community-pagination { gap: 9px; }
+  .community-pagination .secondary { padding: 9px 11px; }
+}
+@media (max-width: 650px) {
+  .sidebar .workspace-navigation { overflow-x: auto; }
+  .sidebar .workspace-navigation .nav-item { flex: 1 0 auto; flex-direction: column; white-space: nowrap; padding: 10px 3px; gap: 5px; font-size: 10px; }
+}
