@@ -26,8 +26,8 @@ public class PostLike {
      * 좋아요를 등록한 사용자의 ID.
      * 사용자 테이블과의 외래키 연결은 없으며, JPA 갱신 대상에서 제외한다.
      */
-    @Column(name = "user_id", nullable = false, updatable = false, length = 255)
-    public String userId;
+    @Column(name = "user_id", nullable = false, updatable = false, columnDefinition = "bigint unsigned")
+    public Long userId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;
