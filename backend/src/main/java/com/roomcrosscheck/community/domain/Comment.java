@@ -30,8 +30,8 @@ public class Comment {
      * 댓글 작성자의 사용자 ID.
      * 사용자 테이블과의 외래키 연결은 없으며, JPA 갱신 대상에서 제외한다.
      */
-    @Column(name = "author_id", nullable = false, updatable = false, length = 255)
-    public String authorId;
+    @Column(name = "author_id", nullable = false, updatable = false, columnDefinition = "bigint unsigned")
+    public Long authorId;
 
     @Column(nullable = false, columnDefinition = "text")
     public String content;
