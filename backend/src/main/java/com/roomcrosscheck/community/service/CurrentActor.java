@@ -10,4 +10,19 @@ package com.roomcrosscheck.community.service;
 public interface CurrentActor {
     Long userId();
     boolean administrator();
+
+    /**
+     * 요청 시점의 인증 정보를 제공하는 연동 지점이다.
+     * 로그인 담당 코드에서 이 타입의 Spring Bean을 등록하고 서버의 인증 정보로 변환한다.
+     * 개발용 고정 사용자나 클라이언트가 전달한 사용자 ID·권한을 공급하면 안 된다.
+     */
+    @FunctionalInterface
+    interface Provider {
+        /**
+         * 현재 요청의 인증 사용자를 반환한다.
+         *
+         * @return 서버에서 확인한 사용자, 비로그인이면 null
+         */
+        CurrentActor current();
+    }
 }
