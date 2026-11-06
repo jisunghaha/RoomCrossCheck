@@ -34,6 +34,9 @@ test("persisted reviewed options are used and final edits survive preview and sa
   await user.click(screen.getByRole("button", { name: "광고 글·사진에서 가져오기" }));
   await user.clear(await screen.findByLabelText("옵션 (한 줄에 하나)"));
   await user.type(screen.getByLabelText("옵션 (한 줄에 하나)"), "저장하지 않은 TV");
+  expect(screen.getByRole("button", { name: "확인한 값으로 매물 등록" })).toBeDisabled();
+  await user.clear(screen.getByLabelText("옵션 (한 줄에 하나)"));
+  await user.type(screen.getByLabelText("옵션 (한 줄에 하나)"), "냉장고\n세탁기");
   await user.click(screen.getByRole("button", { name: "확인한 값으로 매물 등록" }));
   expect(screen.getByLabelText("옵션 (한 줄에 하나)")).toHaveValue("냉장고\n세탁기");
   await user.clear(screen.getByLabelText("옵션 (한 줄에 하나)"));

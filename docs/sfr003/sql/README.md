@@ -1,6 +1,20 @@
-# 개발용 listings 옵션 컬럼
+# 개발용 DB 변경 SQL
 
-이 파일은 검토 가능한 개발용 SQL이며 자동 실행 또는 팀 Flyway migration이 아니다. 팀 rooms·V1 SQL을 변경하지 않는다. 이번 검증은 별도 임시 MySQL에서만 수행했고 공유 DB에는 적용하지 않았다.
+## 광고 확인값 버전·수정 이력 추가
+
+`add_advertisement_review_history.sql`은 개발용 advertisements 전용이다. 공유/운영 DB나 팀 rooms·Flyway V1에는 적용하지 않는다.
+앱의 JPA update도 스키마를 추가하므로 기존 DB는 앱 실행 전에 대상·백업·복구 가능성을 먼저 확인한다.
+
+1. `SHOW COLUMNS FROM advertisements LIKE 'review_version';`과 `SHOW TABLES LIKE 'advertisement_reviews';`로 기존 구조를 확인한다.
+2. 둘 다 없을 때만 승인된 개발 DB에 SQL 전체를 적용한다. 이미 둘 다 있으면 구조와 FK·유일 제약을 확인하고 재적용하지 않는다. 일부만 있거나 타입이 다르면 중단하고 검토한다.
+3. 기존 광고 행 수·원본·추출 JSON·확인 JSON·저장 시각을 전후 비교한다. 기존 광고의 버전은 0이며 기존 JSON은 갱신하지 않는다.
+4. MySQL DDL은 암묵적으로 커밋된다. 코드 복구 시 새 컬럼·이력을 삭제하지 말고 보존한다. 데이터 삭제를 되돌리기 절차로 사용하지 않는다.
+
+이력 API와 이전 클라이언트 호환성은 [확인값 수정 계약](../REVIEW_HISTORY.md)을 따른다.
+
+## listings 옵션 컬럼
+
+이 폴더의 파일은 검토 가능한 개발용 SQL이며 자동 실행 또는 팀 Flyway migration이 아니다. 팀 rooms·V1 SQL을 변경하지 않는다. 이번 검증은 별도 임시 MySQL에서만 수행했고 공유 DB에는 적용하지 않았다.
 
 ## 적용 전
 

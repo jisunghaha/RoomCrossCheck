@@ -163,3 +163,9 @@ Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED
 개발용 POST/PATCH /api/listings의 area는 null 또는 0~100000㎡이며 유효 소수 최대 4자리다. 소수 초과·음수·상한 초과는 400이며 DB 반올림으로 성공시키지 않는다. 값이 같은 끝자리 0은 정리할 수 있다. 입력 19.212와 저장 후 GET 19.212는 같은 값을 유지한다. 컬럼은 DECIMAL(10,4)로 팀 설계의 정밀도와 맞췄지만 팀 /rooms 계약·V1 SQL은 변경하지 않았다.
 
 광고 extraction.areaSqm·reviewed.areaSqm은 이 최종 저장 제한으로 덮어쓰지 않는다. 더 세밀한 값은 원문과 확인 JSON에 남겨 두고 최종 폼에서 명시적으로 수정해야 한다. 기존 데이터에 필요한 이행·범위 검사와 과거 손실값 복구의 한계는 AREA_PRECISION.md 및 sql/README.md에 정리했다.
+
+## 2026-11-06 SFR-005 확인값 버전·수정 이력
+
+광고 응답에 `reviewVersion`을 추가했다. 확인값 PUT은 `X-Review-Version` 헤더가 필수이며 누락은 428, 오래된 버전은 409다. 광고 행 잠금 안에서 확인값·버전·이력을 함께 저장한다. 이전 클라이언트의 버전 없는 저장은 허용하지 않으므로 서버와 프론트를 함께 갱신해야 한다.
+
+`GET /api/advertisements/{id}/reviews`는 최근 20개 `{version,reviewedAt,reviewed}`를 내림차순으로 반환한다. 원본 AI 근거는 기존 `extraction`에서 유지한다. 개발용 스키마 추가·기존 마지막 확인값 보존·미저장 입력 보호와 검증 범위는 [확인값 수정 계약](../sfr003/REVIEW_HISTORY.md)을 참고한다. 팀 rooms·Flyway V1·실제 인증 계약은 변경하지 않았다.

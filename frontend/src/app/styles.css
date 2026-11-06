@@ -1811,6 +1811,7 @@ summary {
 .ad-draft-list article { border: 1px solid #ddd; border-radius: .75rem; padding: 1rem; }
 .ad-draft-list .badge { margin-left: .75rem; }
 .ad-review { margin-top: 1rem; border-top: 1px solid #ddd; padding-top: 1rem; }
+.ad-review > fieldset { display: grid; gap: 1rem; }
 .registration-steps { display: flex; gap: 1rem; padding: 0; margin: 1.5rem 0; list-style: none; flex-wrap: wrap; }
 .registration-steps li { display: flex; gap: .5rem; color: var(--muted); align-items: center; }
 .registration-steps li.active { color: var(--green); font-weight: 700; }

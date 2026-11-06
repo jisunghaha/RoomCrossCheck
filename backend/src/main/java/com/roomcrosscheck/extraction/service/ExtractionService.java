@@ -7,12 +7,15 @@ import com.roomcrosscheck.extraction.dto.ExtractionResult;
 import com.roomcrosscheck.listing.domain.Advertisement;
 import com.roomcrosscheck.listing.dto.AdvertisementResponse;
 import com.roomcrosscheck.listing.repository.AdvertisementRepository;
+import com.roomcrosscheck.listing.domain.AdvertisementReview;
+import com.roomcrosscheck.listing.repository.AdvertisementReviewRepository;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -20,19 +23,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ExtractionService {
     private final AdvertisementRepository repository;
+    private final AdvertisementReviewRepository reviews;
     private final ExtractionProvider provider;
     private final ObjectMapper mapper;
     private final Path storageDirectory;
     private final Set<String> inProgress = ConcurrentHashMap.newKeySet();
 
-    public ExtractionService(AdvertisementRepository repository, ExtractionProvider provider,
+    public ExtractionService(AdvertisementRepository repository, AdvertisementReviewRepository reviews, ExtractionProvider provider,
             ObjectMapper mapper, @Value("${ads.storage-dir:/tmp/roomcrosscheck-ads}") String storageDirectory) {
         this.repository = repository;
+        this.reviews = reviews;
         this.provider = provider;
         this.mapper = mapper;
         this.storageDirectory = Path.of(storageDirectory).toAbsolutePath().normalize();
@@ -78,15 +84,41 @@ public class ExtractionService {
         } finally { inProgress.remove(id); }
     }
 
-    public AdvertisementResponse review(String id, ExtractionResult input) {
-        Advertisement ad = find(id);
+    @Transactional
+    public AdvertisementResponse review(String id, ExtractionResult input, Long expectedVersion) {
+        if (expectedVersion == null)
+            throw new ResponseStatusException(HttpStatus.PRECONDITION_REQUIRED, "최신 광고를 불러온 뒤 다시 저장해 주세요.");
+        if (expectedVersion < 0) throw invalid();
+        Advertisement ad = repository.findForRegistration(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "광고 원본을 찾지 못했습니다."));
+        if (ad.reviewVersion != expectedVersion)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "다른 화면에서 확인값을 변경했습니다. 최신값을 불러온 뒤 다시 확인해 주세요.");
         if (ad.status != Advertisement.Status.EXTRACTION_READY && ad.status != Advertisement.Status.REVIEWED)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "확인할 추출 결과가 없습니다.");
         // Evidence belongs to the immutable AI result, never to user-supplied corrections.
-        ad.reviewedJson = json(validate(input).withEvidence(null));
+        String corrected = json(validate(input).withEvidence(null));
+        // Preserve the last value from before history tracking without inventing older edits or timestamps.
+        if (ad.reviewVersion == 0 && ad.reviewedJson != null)
+            reviews.save(AdvertisementReview.snapshot(ad));
+        ad.reviewedJson = corrected;
         ad.reviewedAt = Instant.now();
+        ad.reviewVersion++;
         ad.status = Advertisement.Status.REVIEWED;
-        return AdvertisementResponse.from(repository.save(ad));
+        repository.saveAndFlush(ad);
+        reviews.saveAndFlush(AdvertisementReview.snapshot(ad));
+        return AdvertisementResponse.from(ad);
+    }
+
+    public record ReviewSnapshot(long version, Instant reviewedAt, ExtractionResult reviewed) {}
+
+    @Transactional(readOnly = true)
+    public List<ReviewSnapshot> history(String id) {
+        find(id);
+        return reviews.findTop20ByAdvertisement_IdOrderByVersionDesc(id).stream().map(entry -> {
+            try { return new ReviewSnapshot(entry.version, entry.reviewedAt,
+                mapper.readValue(entry.reviewedJson, ExtractionResult.class).withEvidence(null)); }
+            catch (JacksonException e) { throw new IllegalStateException("저장된 수정 이력을 읽을 수 없습니다.", e); }
+        }).toList();
     }
 
     private Advertisement find(String id) {

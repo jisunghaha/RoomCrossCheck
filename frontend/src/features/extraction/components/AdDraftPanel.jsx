@@ -3,6 +3,8 @@ import OptionsField from "../../../shared/ui/OptionsField.jsx";
 import { parseOptions, optionsText } from "../../../shared/lib/options.js";
 import { reviewedAdvertisementValues } from "../model/reviewedAdvertisement.js";
 import ExtractionEvidence from "./ExtractionEvidence.jsx";
+import { useUnsavedChanges } from "../../../app/routing/unsavedChanges.js";
+import ReviewHistory from "./ReviewHistory.jsx";
 
 const labels = {
   DRAFT: "임시 저장", EXTRACTION_PENDING: "추출 대기", EXTRACTION_READY: "추출 결과 확인 필요",
@@ -53,13 +55,28 @@ async function extractionError(response) {
   return "AI 추출을 완료하지 못했습니다. 원본은 보존됩니다. 잠시 후 다시 시도해 주세요.";
 }
 
-function ReviewForm({ draft, busy, onSave }) {
+function ReviewForm({ draft, busy, onSave, onDirty }) {
   const result = draft.reviewed || draft.extraction;
   const [optionText, setOptionText] = useState(() => optionsText(result?.options));
   const [noOptions, setNoOptions] = useState(() => Array.isArray(result?.options) && result.options.length === 0);
   const [optionError, setOptionError] = useState("");
+  const formRef = useRef(null);
+  const initial = useRef(null);
+  const [dirty, setDirty] = useState(false);
+  useUnsavedChanges(dirty);
+  useEffect(() => {
+    initial.current = JSON.stringify([...new FormData(formRef.current)]);
+    return () => onDirty(draft.id, false);
+  }, []);
+  const trackChanges = () => {
+    const changed = JSON.stringify([...new FormData(formRef.current)]) !== initial.current;
+    setDirty(changed);
+    onDirty(draft.id, changed);
+  };
+  // Options can disable their textarea, so compare after React has updated the DOM as well.
+  useEffect(() => { if (initial.current !== null) trackChanges(); }, [optionText, noOptions]);
   const number = (value) => value === null || value === undefined ? "" : value;
-  return <form className="ad-review" onSubmit={event => {
+  return <form ref={formRef} className="ad-review" onChange={trackChanges} onSubmit={event => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const numeric = name => data.get(name) === "" ? null : Number(data.get(name));
@@ -71,8 +88,9 @@ function ReviewForm({ draft, busy, onSave }) {
       depositWon: numeric("depositWon"), monthlyRentWon: numeric("monthlyRentWon"),
       maintenanceFeeWon: numeric("maintenanceFeeWon"), areaSqm: numeric("areaSqm"), floor: numeric("floor"),
       areaType: data.get("areaType"), options,
-    });
+    }, draft.reviewVersion ?? 0);
   }}>
+    <fieldset disabled={busy} className="data-operation-boundary">
     <p>AI 결과를 원본 광고와 비교하고 틀린 값을 고쳐 주세요. 빈칸은 확인되지 않은 값입니다. 면적 종류가 불명확하면 미상으로 유지해 주세요.</p>
     <ExtractionEvidence draft={draft} />
     <label>읽은 광고 글<textarea name="rawText" rows="3" maxLength="10000" defaultValue={result?.rawText || ""} /></label>
@@ -89,7 +107,9 @@ function ReviewForm({ draft, busy, onSave }) {
     </div>
     <OptionsField text={optionText} none={noOptions} onTextChange={setOptionText} onNoneChange={setNoOptions} />
     {optionError && <p role="alert">{optionError}</p>}
+    {dirty && <p role="status">저장하지 않은 확인값이 있습니다. 먼저 저장해 주세요.</p>}
     <button className="secondary" type="submit" disabled={busy}>확인한 값 저장</button>
+    </fieldset>
   </form>;
 }
 
@@ -100,12 +120,23 @@ export default function AdDraftPanel({ onRegister }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [dirtyIds, setDirtyIds] = useState(() => new Set());
+  const [conflictId, setConflictId] = useState(null);
+  const markDirty = (id, dirty) => setDirtyIds(previous => {
+    if (previous.has(id) === dirty) return previous;
+    const next = new Set(previous);
+    if (dirty) next.add(id); else next.delete(id);
+    return next;
+  });
   const key = useRef(crypto.randomUUID());
 
   async function refresh() {
     const response = await fetch("/api/advertisements");
     if (!response.ok) throw new Error("광고 원본 목록을 불러오지 못했어요.");
-    setDrafts(await response.json());
+    const received = await response.json();
+    // Refreshing another ad must not silently discard edits in this form.
+    setDrafts(previous => received.map(draft => dirtyIds.has(draft.id)
+      ? previous.find(saved => saved.id === draft.id) ?? draft : draft));
   }
   useEffect(() => { refresh().catch((cause) => setError(cause.message)); }, []);
   const changed = () => { key.current = crypto.randomUUID(); setError(""); };
@@ -164,16 +195,38 @@ export default function AdDraftPanel({ onRegister }) {
     } catch (cause) { setError(cause.message); await refresh().catch(() => {}); }
     finally { setBusy(false); }
   }
-  async function saveReview(id, result) {
+  async function saveReview(id, result, version) {
     setBusy(true); setError(""); setMessage("");
     try {
       const response = await fetch(`/api/advertisements/${encodeURIComponent(id)}/extraction`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(result),
+        method: "PUT", headers: { "Content-Type": "application/json", "X-Review-Version": String(version) }, body: JSON.stringify(result),
       });
-      if (!response.ok) throw new Error(`확인한 값을 저장하지 못했어요. (${response.status})`);
-      await refresh();
+      if (!response.ok) {
+        if ([409, 428].includes(response.status)) {
+          setConflictId(id);
+          throw new Error("다른 화면에서 확인값이 변경됐거나 최신 버전이 필요합니다. 입력은 유지됩니다. 최신값을 불러온 뒤 다시 확인해 주세요.");
+        }
+        throw new Error(response.status === 400 ? "입력값의 형식과 허용 범위를 확인해 주세요. 수정 내용은 유지됩니다." : "확인값을 저장하지 못했습니다. 수정 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.");
+      }
+      const saved = await response.json();
+      setDrafts(previous => previous.map(draft => draft.id === id ? saved : draft));
+      markDirty(id, false);
+      setConflictId(null);
       setMessage("확인한 추출 값을 저장했어요.");
     } catch (cause) { setError(cause.message); }
+    finally { setBusy(false); }
+  }
+
+  async function reloadConflicted(id) {
+    if (dirtyIds.has(id) && !window.confirm("수정 중인 값을 버리고 서버의 최신 확인값을 불러올까요?")) return;
+    setBusy(true); setError("");
+    try {
+      const response = await fetch(`/api/advertisements/${encodeURIComponent(id)}`);
+      if (!response.ok) throw new Error("최신값을 불러오지 못했습니다. 입력은 유지됩니다.");
+      const latest = await response.json();
+      setDrafts(previous => previous.map(draft => draft.id === id ? latest : draft));
+      markDirty(id, false); setConflictId(null);
+    } catch { setError("최신값을 불러오지 못했습니다. 입력은 유지됩니다. 다시 시도해 주세요."); }
     finally { setBusy(false); }
   }
 
@@ -199,10 +252,12 @@ export default function AdDraftPanel({ onRegister }) {
         {draft.status === "DRAFT" && <button className="secondary" disabled={busy} onClick={() => confirm(draft.id)}>원본 확정</button>}
         {["EXTRACTION_PENDING", "EXTRACTION_FAILED"].includes(draft.status) && <button className="secondary" disabled={busy} onClick={() => extract(draft.id)}>{draft.status === "EXTRACTION_FAILED" ? "Gemini 추출 재시도" : "Gemini 추출 시작"}</button>}
         {draft.extractionError && <p role="status">이전 추출 오류: {draft.extractionError}</p>}
-        {["EXTRACTION_READY", "REVIEWED"].includes(draft.status) && <ReviewForm key={`${draft.id}-${draft.status}-${draft.reviewedAt || ""}`} draft={draft} busy={busy} onSave={saveReview} />}
+        {["EXTRACTION_READY", "REVIEWED"].includes(draft.status) && <ReviewForm key={`${draft.id}-${draft.status}-${draft.reviewVersion ?? 0}-${draft.reviewedAt || ""}`} draft={draft} busy={busy} onSave={saveReview} onDirty={markDirty} />}
+        {conflictId === draft.id && <button className="secondary" disabled={busy} onClick={() => reloadConflicted(draft.id)}>최신값 불러오기</button>}
+        {draft.status === "REVIEWED" && <ReviewHistory key={`history-${draft.id}-${draft.reviewVersion ?? 0}`} id={draft.id} />}
         {onRegister && reviewedAdvertisementValues(draft) && <>
           <p className="helper">마지막으로 저장한 확인 값으로 매물 입력을 시작합니다. 수정 중인 값은 먼저 저장해 주세요.</p>
-          <button className="secondary" disabled={busy} onClick={() => onRegister(reviewedAdvertisementValues(draft), draft.id)}>확인한 값으로 매물 등록</button>
+          <button className="secondary" disabled={busy || dirtyIds.size > 0} onClick={() => onRegister(reviewedAdvertisementValues(draft), draft.id)}>확인한 값으로 매물 등록</button>
         </>}
       </article>)}
     </div>}

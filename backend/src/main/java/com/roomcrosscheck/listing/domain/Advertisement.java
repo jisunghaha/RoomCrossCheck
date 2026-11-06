@@ -28,4 +28,5 @@ public class Advertisement {
     @Column(length = 255) public String extractionError;
     public Instant extractedAt;
     public Instant reviewedAt;
+    @Column(nullable = false, columnDefinition = "bigint default 0") public long reviewVersion = 0;
 }

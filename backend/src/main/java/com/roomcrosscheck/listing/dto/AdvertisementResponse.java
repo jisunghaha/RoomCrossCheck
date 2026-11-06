@@ -12,14 +12,14 @@ public record AdvertisementResponse(
     String unitLabel, String sourceUrl, String imageName, String imageContentType,
     Long imageSize, Instant createdAt, Instant confirmedAt,
     ExtractionResult extraction, ExtractionResult reviewed, String extractionError,
-    Instant extractedAt, Instant reviewedAt
+    Instant extractedAt, Instant reviewedAt, long reviewVersion
 ) {
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
     public static AdvertisementResponse from(Advertisement ad) {
         return new AdvertisementResponse(ad.id, ad.status, ad.originalText, ad.addressHint,
             ad.unitLabel, ad.sourceUrl, ad.imageName, ad.imageContentType,
             ad.imageSize, ad.createdAt, ad.confirmedAt, read(ad.extractionJson),
-            read(ad.reviewedJson), ad.extractionError, ad.extractedAt, ad.reviewedAt);
+            read(ad.reviewedJson), ad.extractionError, ad.extractedAt, ad.reviewedAt, ad.reviewVersion);
     }
     private static ExtractionResult read(String json) {
         if (json == null) return null;

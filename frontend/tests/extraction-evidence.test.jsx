@@ -25,7 +25,7 @@ test("shows AI provenance, uncertainty and legacy absence separately without cla
 test("correction saves values without changing or submitting original AI evidence", async () => {
   const ready = { id: "evidence-ad", status: "EXTRACTION_READY", originalText: "월세 35만원", extraction };
   const fetchMock=vi.spyOn(globalThis,"fetch").mockResolvedValueOnce({ok:true,json:async()=>[ready]})
-    .mockResolvedValueOnce({ok:true,json:async()=>({...ready,status:"REVIEWED"})})
+    .mockResolvedValueOnce({ok:true,json:async()=>({...ready,status:"REVIEWED",reviewVersion:1,reviewed:{...extraction,monthlyRentWon:380000}})})
     .mockResolvedValueOnce({ok:true,json:async()=>[{...ready,status:"REVIEWED",reviewed:{...extraction,monthlyRentWon:380000}}]});
   const user=userEvent.setup();render(<AdDraftPanel />);
   const rent=await screen.findByLabelText("월세 (원)");await user.clear(rent);await user.type(rent,"380000");

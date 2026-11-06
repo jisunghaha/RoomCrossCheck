@@ -36,3 +36,7 @@ ExtractionResult.options와 listings.options(JSON)을 연결했다. 공통 역�
 ## 최종 매물 면적 정밀도
 
 listings.area는 DECIMAL(10,4)이며 ListingRequest는 0~100000㎡·유효 소수 4자리로 검증한다. 원값을 반올림하지 않고 초과 요청은 거부한다. 추출·확인 JSON의 정밀도는 별도로 보존한다. 기존 정수부 범위 축소에 대비해 MySQL 연결의 기존 sql_mode에 STRICT_ALL_TABLES를 추가하고 Hibernate 스키마 오류 시 시작을 중단한다. 기존 DB는 앱을 시작하기 전에 docs/sfr003/sql/README.md의 사전 검사·백업·SQL 이행을 따라야 한다. 단순히 컬럼을 넓혀도 과거에 반올림된 값이 자동 복원되지는 않는다.
+
+## 확인값 수정 이력·저장 충돌
+
+광고 확인값 저장은 `X-Review-Version` 헤더로 이전 화면의 버전을 확인하고, 광고 행 잠금 안에서 현재 값·버전·이력을 원자적으로 저장한다. `advertisement_reviews`는 버전별 확인값을 보관하며 조회 API는 최근 20건을 반환한다. 기존 마지막 확인값은 최초 수정 때 버전 0으로 보존한다. 개발용 스키마 추가와 이전 클라이언트 호환성은 [SFR-005 계약](../docs/sfr003/REVIEW_HISTORY.md)을 따른다.

@@ -47,7 +47,10 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
   const reviewRent = await screen.findByLabelText("월세 (원)");
   await user.clear(reviewRent);
   await user.type(reviewRent, "999999");
-  await user.click(await screen.findByRole("button", { name: "확인한 값으로 매물 등록" }));
+  expect(screen.getByRole("button", { name: "확인한 값으로 매물 등록" })).toBeDisabled();
+  await user.clear(reviewRent);
+  await user.type(reviewRent, "123456");
+  await user.click(screen.getByRole("button", { name: "확인한 값으로 매물 등록" }));
   const dialog = within(screen.getByRole("main"));
   expect(dialog.getByLabelText("월세 (만원)")).toHaveValue(12.3456);
   expect(dialog.getByLabelText("고정 관리비 (만원)")).toHaveValue(0);

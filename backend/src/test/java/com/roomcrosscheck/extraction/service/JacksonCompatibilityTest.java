@@ -6,6 +6,7 @@ import com.roomcrosscheck.extraction.dto.ExtractionResult;
 import com.roomcrosscheck.listing.domain.Advertisement;
 import com.roomcrosscheck.listing.dto.AdvertisementResponse;
 import com.roomcrosscheck.listing.repository.AdvertisementRepository;
+import com.roomcrosscheck.listing.repository.AdvertisementReviewRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -37,12 +38,14 @@ class JacksonCompatibilityTest {
              "monthlyRentWon":420000,"maintenanceFeeWon":0,"areaSqm":23.7500,"floor":-2}
             """;
         when(repository.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repository.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
         when(repository.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
 
         new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class))
             .withUserConfiguration(ExtractionService.class, GeminiExtractionProvider.class)
             .withBean(AdvertisementRepository.class, () -> repository)
+            .withBean(AdvertisementReviewRepository.class, () -> mock(AdvertisementReviewRepository.class))
             .withPropertyValues("gemini.enabled=false", "ads.storage-dir=" + directory)
             .run(context -> {
                 assertNull(context.getStartupFailure());
@@ -54,7 +57,7 @@ class JacksonCompatibilityTest {
 
                 var corrected = new ExtractionResult("월세 42만원", null, null,
                     430000L, 0L, new BigDecimal("23.7500"), -2, "공급");
-                var response = context.getBean(ExtractionService.class).review(ad.id, corrected);
+                var response = context.getBean(ExtractionService.class).review(ad.id, corrected, 0L);
                 var json = mapper.readTree(mapper.writeValueAsString(response));
                 assertTrue(json.path("extraction").has("depositWon"));
                 assertTrue(json.path("extraction").path("depositWon").isNull());

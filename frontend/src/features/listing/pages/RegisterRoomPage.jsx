@@ -5,6 +5,7 @@ import { optionsSummary } from "../../../shared/lib/options.js";
 import { money } from "../../../shared/lib/domain.js";
 import AdDraftPanel from "../../extraction/components/AdDraftPanel.jsx";
 import RoomForm from "../components/RoomForm.jsx";
+import { confirmLeave } from "../../../app/routing/unsavedChanges.js";
 
 /**
  * 직접 입력과 서버에 보관한 광고를 하나의 등록 화면으로 연결한다.
@@ -44,7 +45,7 @@ export default function RegisterRoomPage({ navigate }) {
     </ol>
     {step === 1 && <>
       <div className="modal-actions" role="group" aria-label="매물 등록 방식">
-        <button className="secondary" aria-pressed={method === "manual"} onClick={() => { setMethod("manual"); setError(""); }}>직접 입력</button>
+        <button className="secondary" aria-pressed={method === "manual"} onClick={() => { if (method !== "manual" && !confirmLeave()) return; setMethod("manual"); setError(""); }}>직접 입력</button>
         <button className="secondary" aria-pressed={method === "advertisement"} onClick={() => { setMethod("advertisement"); setError(""); }}>광고 글·사진에서 가져오기</button>
       </div>
       {method === "manual" ? <section className="list-section ad-drafts">
