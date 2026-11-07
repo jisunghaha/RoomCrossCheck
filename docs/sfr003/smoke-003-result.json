@@ -1,0 +1,22 @@
+{
+  "sampleId": "synthetic-smoke-003",
+  "sampleType": "synthetic_smoke_not_representative_dataset",
+  "model": "gemini-flash-latest",
+  "sourceText": "테스트 전용 가상 원룸 광고. 보증금 없음(0원), 월세 35만원, 관리비 3만원, 면적 18㎡, 2층. 주소 미기재.",
+  "expected": {
+    "address": null,
+    "depositWon": 0,
+    "monthlyRentWon": 350000,
+    "maintenanceFeeWon": 30000,
+    "areaSqm": 18,
+    "floor": 2
+  },
+  "requestedAtUtc": "2026-10-14T14:23:18.844865+00:00",
+  "freeTierEvidence": "User-provided AI Studio screenshot and confirmation in this chat",
+  "scope": "Direct Gemini REST request using branch prompt; not Spring API integration",
+  "attempts": 1,
+  "status": "failed",
+  "httpStatus": 503,
+  "errorStatus": "UNAVAILABLE",
+  "errorMessage": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+}

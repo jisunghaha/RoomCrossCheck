@@ -1,0 +1,37 @@
+{
+  "sampleId": "synthetic-smoke-006",
+  "sampleType": "synthetic_smoke_not_representative_dataset",
+  "model": "gemini-3.5-flash-lite",
+  "sourceText": "가상 광고 006: 보증금 900만원, 월세 52만원, 관리비 6만원, 면적 23.75㎡, 지하 2층. 주소 미기재. 개인정보 없는 합성 테스트입니다.",
+  "expected": {
+    "address": null,
+    "depositWon": 9000000,
+    "monthlyRentWon": 520000,
+    "maintenanceFeeWon": 60000,
+    "areaSqm": 23.75,
+    "floor": -2
+  },
+  "scope": "Spring Boot advertisement API -> real Gemini -> actual MySQL",
+  "freeTierEvidence": "User-confirmed free-tier account",
+  "attempts": 1,
+  "status": "success",
+  "springHttpStatus": 200,
+  "extraction": {
+    "rawText": "가상 광고 006: 보증금 900만원, 월세 52만원, 관리비 6만원, 면적 23.75㎡, 지하 2층. 주소 미기재. 개인정보 없는 합성 테스트입니다.",
+    "address": null,
+    "depositWon": 9000000,
+    "monthlyRentWon": 520000,
+    "maintenanceFeeWon": 60000,
+    "areaSqm": 23.75,
+    "floor": -2
+  },
+  "fieldMatches": {
+    "address": true,
+    "depositWon": true,
+    "monthlyRentWon": true,
+    "maintenanceFeeWon": true,
+    "areaSqm": true,
+    "floor": true
+  },
+  "mysqlExtractionPersistence": "passed"
+}
