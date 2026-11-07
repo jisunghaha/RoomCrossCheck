@@ -1,0 +1,248 @@
+package com.roomcrosscheck.extraction.service;
+
+import com.roomcrosscheck.extraction.client.ExtractionProvider;
+import com.roomcrosscheck.extraction.client.ExtractionFailure;
+import com.roomcrosscheck.extraction.dto.ExtractionResult;
+import com.roomcrosscheck.listing.domain.Advertisement;
+import com.roomcrosscheck.listing.repository.AdvertisementRepository;
+import com.roomcrosscheck.listing.repository.AdvertisementReviewRepository;
+
+import tools.jackson.databind.json.JsonMapper;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+class ExtractionServiceTest {
+    @TempDir Path directory;
+
+    @Test void staleOrMissingVersionCannotOverwriteTheCurrentReviewOrCreateHistory() {
+        var repo = mock(AdvertisementRepository.class);
+        var history = mock(AdvertisementReviewRepository.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.REVIEWED;
+        ad.reviewVersion = 2;
+        ad.reviewedJson = "{\"monthlyRentWon\":420000}";
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        var service = new ExtractionService(repo, history, mock(ExtractionProvider.class),
+            JsonMapper.builder().build(), directory.toString());
+        var correction = new ExtractionResult("광고", null, null, 390000L, null, null, null, null);
+        assertEquals(428, assertThrows(ResponseStatusException.class,
+            () -> service.review(ad.id, correction, null)).getStatusCode().value());
+        assertEquals(409, assertThrows(ResponseStatusException.class,
+            () -> service.review(ad.id, correction, 1L)).getStatusCode().value());
+        assertEquals(2, ad.reviewVersion);
+        assertEquals("{\"monthlyRentWon\":420000}", ad.reviewedJson);
+        verify(repo, never()).saveAndFlush(any());
+        verifyNoInteractions(history);
+    }
+
+    @Test void savesImmutableSnapshotsAndPreservesTheLastLegacyReview() {
+        var repo = mock(AdvertisementRepository.class);
+        var history = mock(AdvertisementReviewRepository.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.REVIEWED;
+        ad.reviewedJson = "{\"monthlyRentWon\":420000}";
+        String legacy = ad.reviewedJson;
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        var service = new ExtractionService(repo, history, mock(ExtractionProvider.class),
+            JsonMapper.builder().build(), directory.toString());
+        var correction = new ExtractionResult("광고", null, null, 390000L, 0L, null, -2, null);
+        assertEquals(1, service.review(ad.id, correction, 0L).reviewVersion());
+        var previous = org.mockito.ArgumentCaptor.forClass(com.roomcrosscheck.listing.domain.AdvertisementReview.class);
+        verify(history).save(previous.capture());
+        assertEquals(0, previous.getValue().version);
+        assertEquals(legacy, previous.getValue().reviewedJson);
+        assertNull(previous.getValue().reviewedAt);
+        var latest = org.mockito.ArgumentCaptor.forClass(com.roomcrosscheck.listing.domain.AdvertisementReview.class);
+        verify(history).saveAndFlush(latest.capture());
+        assertEquals(1, latest.getValue().version);
+        assertEquals(ad.reviewedJson, latest.getValue().reviewedJson);
+        assertNotNull(latest.getValue().reviewedAt);
+        assertEquals(0L, service.review(ad.id, correction, 1L).reviewed().maintenanceFeeWon());
+        assertEquals(1, latest.getValue().version);
+        verify(history, times(1)).save(any());
+    }
+
+    @Test void userReviewCannotOverwriteOriginalAiEvidence() {
+        var repo = mock(AdvertisementRepository.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_READY;
+        ad.extractionJson = "{\"rawText\":\"월세 35만원\",\"monthlyRentWon\":350000,\"evidence\":{\"monthlyRentWon\":{\"quote\":\"월세 35만원\",\"source\":\"INPUT_TEXT\",\"status\":\"PRESENT\"}}}";
+        String original = ad.extractionJson;
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        var fake = new com.roomcrosscheck.extraction.dto.FieldEvidence("수정한 근거", "INPUT_TEXT", "PRESENT", null);
+        var input = new ExtractionResult("수정한 글", null, null, 380000L, null, null, null, "미상", null,
+            java.util.Map.of("monthlyRentWon", fake));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), mock(ExtractionProvider.class), JsonMapper.builder().build(), directory.toString());
+        var response = service.review(ad.id, input, 0L);
+        assertEquals(380000L, response.reviewed().monthlyRentWon());
+        assertNull(response.reviewed().evidence());
+        assertEquals("월세 35만원", response.extraction().evidence().get("monthlyRentWon").quote());
+        assertEquals(original, ad.extractionJson);
+    }
+
+    @Test void typedFailuresPreserveOriginalAndAllowRetryWithoutSavingEmptyResults() {
+        for (var kind : new ExtractionFailure.Kind[]{ExtractionFailure.Kind.INVALID_RESPONSE,
+                ExtractionFailure.Kind.NO_READABLE_TEXT, ExtractionFailure.Kind.TIMEOUT,
+                ExtractionFailure.Kind.AUTHENTICATION_FAILED, ExtractionFailure.Kind.PROVIDER_UNAVAILABLE,
+                ExtractionFailure.Kind.CONNECTION_FAILED, ExtractionFailure.Kind.RATE_LIMITED}) {
+            var repo = mock(AdvertisementRepository.class);
+            var provider = mock(ExtractionProvider.class);
+            var ad = new Advertisement();
+            ad.status = Advertisement.Status.EXTRACTION_PENDING;
+            ad.originalText = "관리비 0원";
+            when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+            when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+            when(provider.extract(any(), any(), any(), any(), any())).thenThrow(new ExtractionFailure(kind))
+                .thenReturn(new ExtractionResult(ad.originalText, null, null, null, 0L, null, null, null));
+            var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), provider, JsonMapper.builder().build(), directory.toString());
+            assertEquals(kind.name(), assertThrows(ExtractionFailure.class, () -> service.extract(ad.id)).code());
+            assertEquals(Advertisement.Status.EXTRACTION_FAILED, ad.status);
+            assertNull(ad.extractionJson);
+            assertNull(ad.extractedAt);
+            assertEquals("관리비 0원", ad.originalText);
+            assertNotNull(ad.extractionError);
+            var retry = service.extract(ad.id);
+            assertEquals(Advertisement.Status.EXTRACTION_READY, retry.status());
+            assertEquals(0L, retry.extraction().maintenanceFeeWon());
+            assertNull(retry.extractionError());
+        }
+    }
+
+    @Test void missingStoredImageRecordsFailureAndNeverCallsProvider() {
+        var repo = mock(AdvertisementRepository.class);
+        var provider = mock(ExtractionProvider.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_PENDING;
+        ad.originalText = "원본 글 보존";
+        ad.imageStorageKey = "unavailable.png";
+        ad.imageContentType = "image/png";
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), provider, JsonMapper.builder().build(), directory.toString());
+        assertEquals("SOURCE_UNAVAILABLE", assertThrows(ExtractionFailure.class, () -> service.extract(ad.id)).code());
+        assertEquals(Advertisement.Status.EXTRACTION_FAILED, ad.status);
+        assertEquals("원본 글 보존", ad.originalText);
+        assertNull(ad.extractionJson);
+        verifyNoInteractions(provider);
+    }
+
+    @Test void extractsStoredImageThenPersistsUserCorrection() throws Exception {
+        var repo = mock(AdvertisementRepository.class);
+        var provider = mock(ExtractionProvider.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_PENDING;
+        ad.originalText = "보증금 500만원";
+        ad.imageStorageKey = "stored.png";
+        ad.imageContentType = "image/png";
+        Files.write(directory.resolve("stored.png"), new byte[]{1, 2, 3});
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        when(provider.extract(eq(ad.originalText), isNull(), isNull(),
+                argThat(bytes -> java.util.Arrays.equals(bytes, new byte[]{1, 2, 3})), eq("image/png")))
+            .thenReturn(new ExtractionResult("보증금 500만원", null, 5_000_000L, null, null, null, null, null));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), provider, JsonMapper.builder().build(), directory.toString());
+
+        var ready = service.extract(ad.id);
+        assertEquals(Advertisement.Status.EXTRACTION_READY, ready.status());
+        assertEquals(5_000_000L, ready.extraction().depositWon());
+        assertEquals(ready.id(), service.extract(ad.id).id());
+        verify(provider, times(1)).extract(any(), any(), any(), any(), any());
+
+        var corrected = new ExtractionResult("보증금 500만원", "서울시", 5_000_000L, 420_000L, null, null, null, null);
+        var reviewed = service.review(ad.id, corrected, 0L);
+        assertEquals(Advertisement.Status.REVIEWED, reviewed.status());
+        assertEquals(420_000L, reviewed.reviewed().monthlyRentWon());
+        assertEquals(5_000_000L, reviewed.extraction().depositWon());
+        assertThrows(ResponseStatusException.class, () -> service.extract(ad.id));
+    }
+
+    @Test void failedExtractionCanBeRetriedWithoutLosingOriginal() {
+        var repo = mock(AdvertisementRepository.class);
+        var provider = mock(ExtractionProvider.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_PENDING;
+        ad.originalText = "월세 42만원";
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        when(provider.extract(any(), any(), any(), any(), any()))
+            .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS, "한도 초과"))
+            .thenReturn(new ExtractionResult("월세 42만원", null, null, 420_000L, null, null, null, null));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), provider, JsonMapper.builder().build(), directory.toString());
+        assertThrows(ResponseStatusException.class, () -> service.extract(ad.id));
+        assertEquals(Advertisement.Status.EXTRACTION_FAILED, ad.status);
+        assertEquals("월세 42만원", ad.originalText);
+        assertEquals(Advertisement.Status.EXTRACTION_READY, service.extract(ad.id).status());
+    }
+
+    @Test void preservesExtractedAreaTypeSeparatelyFromUserCorrection() {
+        var repo = mock(AdvertisementRepository.class);
+        var provider = mock(ExtractionProvider.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_PENDING;
+        ad.originalText = "전용면적 23㎡";
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        when(provider.extract(any(), any(), any(), any(), any()))
+            .thenReturn(new ExtractionResult(ad.originalText, null, null, null, null,
+                new java.math.BigDecimal("23"), null, "전용"));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), provider, JsonMapper.builder().build(), directory.toString());
+        assertEquals("전용", service.extract(ad.id).extraction().areaType());
+        var corrected = new ExtractionResult(ad.originalText, null, null, null, null,
+            new java.math.BigDecimal("23"), null, "공급");
+        var response = service.review(ad.id, corrected, 0L);
+        assertEquals("전용", response.extraction().areaType());
+        assertEquals("공급", response.reviewed().areaType());
+    }
+
+    @Test void invalidAreaTypeFromProviderFailsWithoutSavingAnExtraction() {
+        var repo = mock(AdvertisementRepository.class);
+        var provider = mock(ExtractionProvider.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.EXTRACTION_PENDING;
+        ad.originalText = "면적 23㎡";
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.save(any(Advertisement.class))).thenAnswer(call -> call.getArgument(0));
+        when(provider.extract(any(), any(), any(), any(), any()))
+            .thenReturn(new ExtractionResult(ad.originalText, null, null, null, null,
+                new java.math.BigDecimal("23"), null, "주거용"));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), provider, JsonMapper.builder().build(), directory.toString());
+        assertEquals(502, assertThrows(ResponseStatusException.class,
+            () -> service.extract(ad.id)).getStatusCode().value());
+        assertNull(ad.extractionJson);
+        assertEquals("면적 23㎡", ad.originalText);
+        assertEquals(Advertisement.Status.EXTRACTION_FAILED, ad.status);
+    }
+
+    @Test void invalidUserAreaTypeDoesNotOverwriteSavedReview() {
+        var repo = mock(AdvertisementRepository.class);
+        var ad = new Advertisement();
+        ad.status = Advertisement.Status.REVIEWED;
+        ad.reviewedJson = "{\"areaType\":\"전용\"}";
+        when(repo.findById(ad.id)).thenReturn(Optional.of(ad));
+        when(repo.findForRegistration(ad.id)).thenReturn(Optional.of(ad));
+        var service = new ExtractionService(repo, mock(AdvertisementReviewRepository.class), mock(ExtractionProvider.class),
+            JsonMapper.builder().build(), directory.toString());
+        var invalid = new ExtractionResult("원본", null, null, null, null, null, null, "주거용");
+        assertEquals(400, assertThrows(ResponseStatusException.class,
+            () -> service.review(ad.id, invalid, 0L)).getStatusCode().value());
+        assertEquals("{\"areaType\":\"전용\"}", ad.reviewedJson);
+        verify(repo, never()).save(any());
+    }
+}

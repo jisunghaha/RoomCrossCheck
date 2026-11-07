@@ -1,0 +1,2 @@
+SET SESSION sql_mode = IF(FIND_IN_SET('STRICT_ALL_TABLES', @@SESSION.sql_mode), @@SESSION.sql_mode, CONCAT_WS(',', NULLIF(@@SESSION.sql_mode, ''), 'STRICT_ALL_TABLES'));
+ALTER TABLE `listings` MODIFY COLUMN `area` DECIMAL(10,4) NULL;

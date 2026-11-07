@@ -1,0 +1,236 @@
+{
+  "status": "completed-with-findings",
+  "dateUtc": "2026-11-03",
+  "baseCommit": "02a8d473cace3f55126ebc75a93d598c39e5f49b",
+  "model": "gemini-3.5-flash-lite",
+  "modelMetadataHttpStatus": 200,
+  "realGenerationAttempts": 3,
+  "realGenerationSuccesses": 3,
+  "maximumAuthorizedGenerationAttempts": 3,
+  "automaticRetries": false,
+  "quotaOrAuthenticationErrorsObserved": false,
+  "elapsedMs": {
+    "minimum": 2030,
+    "maximum": 2736,
+    "mean": 2355.7
+  },
+  "verifiedPath": "Chromium image upload -> current Spring Boot HttpClient with HTTPS proxy/TLS -> real Gemini -> isolated MySQL -> browser review/save",
+  "localExtractionStubUsed": false,
+  "remainingFreeQuotaVerified": false,
+  "billingConfigurationChanged": false,
+  "freeTierBasis": "Prior user-confirmed AI Studio free tier recorded in existing VALIDATION.md; current quota and invoice were not inspected.",
+  "cases": [
+    {
+      "sampleId": "busan-004-2",
+      "backendHttpStatus": 200,
+      "elapsedMs": 2301,
+      "fields": {
+        "address": null,
+        "depositWon": null,
+        "monthlyRentWon": null,
+        "maintenanceFeeWon": 100000,
+        "areaSqm": 16.94,
+        "floor": 2,
+        "areaType": "전용",
+        "options": [
+          "붙박이장",
+          "세탁기",
+          "냉장고"
+        ]
+      },
+      "numericFieldComparison": {
+        "depositWon": {
+          "expected": null,
+          "actual": null,
+          "match": true
+        },
+        "monthlyRentWon": {
+          "expected": null,
+          "actual": null,
+          "match": true
+        },
+        "maintenanceFeeWon": {
+          "expected": 100000,
+          "actual": 100000,
+          "match": true
+        },
+        "floor": {
+          "expected": 2,
+          "actual": 2,
+          "match": true
+        }
+      },
+      "areaKindAndValueConsistentWithVisibleSource": true,
+      "addressComparison": {
+        "expectedVisiblePartialAddress": null,
+        "actual": null,
+        "match": true
+      },
+      "optionReview": "Returned option items have visible textual support; no appliance expansion or pet-permission inference observed. This is not exhaustive option recall scoring.",
+      "independentHumanApproval": false
+    },
+    {
+      "sampleId": "busan-008-1",
+      "backendHttpStatus": 200,
+      "elapsedMs": 2030,
+      "fields": {
+        "address": "부산 금정구 장전동",
+        "depositWon": 5000000,
+        "monthlyRentWon": 350000,
+        "maintenanceFeeWon": null,
+        "areaSqm": 19.212,
+        "floor": 4,
+        "areaType": "공급",
+        "options": null
+      },
+      "numericFieldComparison": {
+        "depositWon": {
+          "expected": 5000000,
+          "actual": 5000000,
+          "match": true
+        },
+        "monthlyRentWon": {
+          "expected": 350000,
+          "actual": 350000,
+          "match": true
+        },
+        "maintenanceFeeWon": {
+          "expected": null,
+          "actual": null,
+          "match": true
+        },
+        "floor": {
+          "expected": 4,
+          "actual": 4,
+          "match": true
+        }
+      },
+      "areaKindAndValueConsistentWithVisibleSource": true,
+      "addressComparison": {
+        "expectedVisiblePartialAddress": "부산 금정구 장전동",
+        "actual": "부산 금정구 장전동",
+        "match": true
+      },
+      "optionReview": "Returned option items have visible textual support; no appliance expansion or pet-permission inference observed. This is not exhaustive option recall scoring.",
+      "independentHumanApproval": false
+    },
+    {
+      "sampleId": "busan-011-1",
+      "backendHttpStatus": 200,
+      "elapsedMs": 2736,
+      "fields": {
+        "address": null,
+        "depositWon": 5000000,
+        "monthlyRentWon": 350000,
+        "maintenanceFeeWon": 100000,
+        "areaSqm": 14.876,
+        "floor": 3,
+        "areaType": "전용",
+        "options": [
+          "주차 가능"
+        ]
+      },
+      "numericFieldComparison": {
+        "depositWon": {
+          "expected": 5000000,
+          "actual": 5000000,
+          "match": true
+        },
+        "monthlyRentWon": {
+          "expected": 350000,
+          "actual": 350000,
+          "match": true
+        },
+        "maintenanceFeeWon": {
+          "expected": 100000,
+          "actual": 100000,
+          "match": true
+        },
+        "floor": {
+          "expected": 3,
+          "actual": 3,
+          "match": true
+        }
+      },
+      "areaKindAndValueConsistentWithVisibleSource": true,
+      "addressComparison": {
+        "expectedVisiblePartialAddress": "부산 남구 대연동",
+        "actual": null,
+        "match": false
+      },
+      "optionReview": "Returned option items have visible textual support; no appliance expansion or pet-permission inference observed. This is not exhaustive option recall scoring.",
+      "independentHumanApproval": false
+    }
+  ],
+  "reviewAndSave": [
+    {
+      "sampleId": "busan-004-2",
+      "reviewPersisted": true,
+      "extractionPreserved": true,
+      "saved": false,
+      "reason": "Original image has no address; required-address validation blocks final registration. No address fabricated."
+    },
+    {
+      "sampleId": "busan-008-1",
+      "reviewPersisted": true,
+      "extractionPreserved": true,
+      "saved": true,
+      "reloaded": true,
+      "listingId": "083a5de4-dadc-45d3-b630-4dddcd8b7287",
+      "originalArea": 19.212,
+      "finalArea": 19.21,
+      "precisionBlockObserved": {
+        "stepMismatch": true,
+        "value": "19.212",
+        "step": "0.01"
+      },
+      "manualTestRoundingApplied": true
+    },
+    {
+      "sampleId": "busan-011-1",
+      "reviewPersisted": true,
+      "extractionPreserved": true,
+      "saved": true,
+      "reloaded": true,
+      "listingId": "46ac8415-a0df-43b9-b46a-2902ec91c3d3",
+      "originalArea": 14.876,
+      "finalArea": 14.88,
+      "precisionBlockObserved": {
+        "stepMismatch": true,
+        "value": "14.876",
+        "step": "0.01"
+      },
+      "manualTestRoundingApplied": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "AREA_PRECISION",
+      "severity": "needs-fix",
+      "description": "Valid three-decimal areas returned by Gemini are blocked by form step=0.01. Direct POST area 19.212 is echoed as 19.212 but subsequent GET returns DB-rounded 19.21.",
+      "productionCodeChanged": false
+    },
+    {
+      "id": "PARTIAL_ADDRESS_OMISSION",
+      "severity": "review-needed",
+      "description": "busan-011-1 returned null address despite visible partial location in the title/banner. Assistant review entered only 부산 남구 대연동."
+    },
+    {
+      "id": "MISSING_SOURCE_ADDRESS",
+      "severity": "expected-validation",
+      "description": "busan-004-2 has no visible address. Review saved, final listing correctly blocked; no address fabricated."
+    }
+  ],
+  "originalImagesModified": false,
+  "formalTwentySampleEvaluationCompleted": false,
+  "cerMeasured": false,
+  "independentHumanGroundTruthApproval": false,
+  "cleanup": {
+    "temporaryDatabaseAndVolumesRemoved": true,
+    "backendAndFrontendStopped": true,
+    "temporarySecretFileRemoved": true,
+    "temporaryUploadedCopiesRemoved": true
+  },
+  "committed": false,
+  "pushed": false
+}

@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/roomcrosscheck}
+    username: ${DB_USER:room_app}
+    password: ${DB_PASSWORD}
+    hikari:
+      connection-init-sql: >-
+        SET SESSION sql_mode = IF(FIND_IN_SET('STRICT_ALL_TABLES', @@SESSION.sql_mode), @@SESSION.sql_mode, CONCAT_WS(',', NULLIF(@@SESSION.sql_mode, ''), 'STRICT_ALL_TABLES'))
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.hbm2ddl.halt_on_error: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+ads:
+  storage-dir: ${AD_STORAGE_DIR:/tmp/roomcrosscheck-ads}
+gemini:
+  enabled: ${GEMINI_ENABLED:false}
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
+  base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+server:
+  address: 0.0.0.0
