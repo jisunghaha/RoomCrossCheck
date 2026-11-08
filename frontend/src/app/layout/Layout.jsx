@@ -5,6 +5,7 @@ export const navigation = [
   ["compare", "compare", "매물 비교"],
   ["reviews", "review", "거주 후기"],
   ["visits", "book", "방문 체크리스트"],
+  ["community", "review", "커뮤니티"],
 ];
 export default function Layout({ page, onGuide, children }) {
   const { rooms, dataMode } = useRooms();
@@ -26,7 +27,7 @@ export default function Layout({ page, onGuide, children }) {
           <span>⌄</span>
         </div>
         <div className="nav-label">MY WORKSPACE</div>
-        <nav>
+        <nav className="workspace-navigation" aria-label="주요 메뉴">
           {navigation.map(([p, icon, title]) => (
             <a
               key={p}
@@ -59,8 +60,8 @@ export default function Layout({ page, onGuide, children }) {
         <div className="profile">
           <div className="avatar">나</div>
           <div>
-            <strong>{dataMode === "local" ? "데모 사용자" : "로그인 미연결"}</strong>
-            <small>{dataMode === "listing-api" ? "매물은 로컬 개발 DB에 저장" : dataMode === "api" ? "서버 저장 모드" : "브라우저에만 저장됩니다"}</small>
+            <strong>{page === "community" ? "커뮤니티" : dataMode === "local" ? "데모 사용자" : "로그인 미연결"}</strong>
+            <small>{page === "community" ? "공개 게시판 · 서버 연결" : dataMode === "listing-api" ? "매물은 로컬 개발 DB에 저장" : dataMode === "api" ? "서버 저장 모드" : "브라우저에만 저장됩니다"}</small>
           </div>
           <span className="demo-dot" />
         </div>
@@ -71,12 +72,12 @@ export default function Layout({ page, onGuide, children }) {
             나의 자취 준비 <span>/</span>
             <strong>{page === "register" ? "매물 등록" : navigation.find((n) => n[0] === page)?.[2]}</strong>
           </div>
-          <span className="demo-badge">{dataMode === "local" ? "REACT DEMO" : "SERVER"}</span>
+          <span className="demo-badge">{page === "community" ? "COMMUNITY" : dataMode === "local" ? "REACT DEMO" : "SERVER"}</span>
         </header>
         <div className="content">{children}</div>
         <footer>
           원룸체크 <span>더 나은 자취의 시작</span>
-          <span>{dataMode === "local" ? "모든 초기 매물·공식 기록·후기는 가상 예시입니다." : "연결된 서버의 데이터를 표시합니다."}</span>
+          <span>{page === "community" ? "게시글과 댓글은 연결된 서버를 통해 저장됩니다." : dataMode === "local" ? "모든 초기 매물·공식 기록·후기는 가상 예시입니다." : "연결된 서버의 데이터를 표시합니다."}</span>
         </footer>
       </main>
     </>
