@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRooms } from "./state/RoomContext.jsx";
 import { useHashRoute } from "./routing/useHashRoute.js";
 import Layout from "./layout/Layout.jsx";
@@ -14,6 +14,8 @@ import RegisterRoomPage from "../features/listing/pages/RegisterRoomPage.jsx";
 import CommunityPage from "../features/community/CommunityPage.jsx";
 export default function App() {
   const [page, navigate] = useHashRoute();
+  const [authRevision, setAuthRevision] = useState(0);
+  const onSessionChange = useCallback(() => setAuthRevision(value => value + 1), []);
   const { rooms, deleteRoom, toast, loading, loadError, saving, reload, dataMode } = useRooms();
   const [modal, setModal] = useState(null),
     [visitRoom, setVisitRoom] = useState(null);
@@ -27,9 +29,9 @@ export default function App() {
   return (
     <>
       <fieldset disabled={page !== "community" && saving} className="data-operation-boundary" aria-busy={page !== "community" && saving}>
-      <Layout page={page} onGuide={() => setModal({ type: "guide" })}>
+      <Layout page={page} onGuide={() => setModal({ type: "guide" })} onSessionChange={onSessionChange}>
         {page === "register" && <RegisterRoomPage navigate={navigate} />}
-        {page === "community" && <CommunityPage />}
+        {page === "community" && <CommunityPage authRevision={authRevision} />}
         {page === "rooms" && (
           <RoomsPage
             onAdd={() => navigate("register")}
@@ -133,11 +135,12 @@ export default function App() {
                 </li>
               </ol>
               <div className="notice">
+                {/* 기존 로그인 미연결 문구는 실제 인증 UI와 모순되므로 제거하고 저장 방식별 안내를 갱신했다. */}
                 {dataMode === "local"
-                  ? "현재 데이터는 이 브라우저에 저장됩니다. 로그인·OCR·공공 API는 아직 연결되지 않았습니다."
+                  ? "현재 매물 데이터는 이 브라우저에 저장됩니다. 회원가입·로그인은 연결된 서버를 이용합니다."
                   : dataMode === "listing-api"
-                    ? "매물은 MySQL에 저장됩니다. 광고 추출은 사용자 확인 후 매물 입력에 활용합니다. 후기·방문 기록은 이 브라우저에만 저장되고 로그인·공공 API는 아직 연결되지 않았습니다."
-                    : "데이터는 연결된 서버를 통해 저장됩니다. 로그인·OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
+                    ? "매물은 MySQL에 저장됩니다. 광고 추출은 사용자 확인 후 매물 입력에 활용합니다. 후기·방문 기록은 이 브라우저에만 저장됩니다. 회원가입·로그인은 연결된 서버를 이용합니다."
+                    : "데이터는 연결된 서버를 통해 저장됩니다. 회원가입·로그인을 이용할 수 있으며 OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
               </div>
             </>
           )}

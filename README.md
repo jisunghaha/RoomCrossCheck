@@ -1,10 +1,10 @@
 # RoomCrossCheck
 
-현재 작업 폴더는 커뮤니티 브랜치 기반의 **로그인·권한 시연 검토본**입니다. [시연 실행 안내](시연_실행안내.md)를 먼저 참고하세요. 정식 회원 인증이나 최신 SFR-003·004·005 통합본은 아니며, 아래는 원래 기능 브랜치의 설명입니다.
+커뮤니티와 일반 회원 인증을 통합한 개발 브랜치입니다. 왼쪽 계정 카드의 회원가입·로그인 화면은 [회원 인증 명세](docs/api/AUTH.md)의 API와 연결합니다. 구글 OAuth, 개인 매물·방문 기록의 소유권 검사는 후속 작업입니다.
 
 원룸 광고 원본을 저장하고, Gemini 추출값을 사용자가 확인·수정한 뒤 매물로 등록하는 React·Spring Boot·MySQL 로컬 개발 프로젝트입니다.
 
-현재 SFR-003 기능 브랜치에서 팀과 같은 폴더 배치와 단일 단계형 등록 흐름으로 정리했습니다. 팀 브랜치를 병합한 것은 아니며, 팀의 `rooms` DB·실제 인증으로 전환한 상태도 아닙니다. 차이와 합의할 계약은 [통합 준비 기록](docs/sfr003/TEAM_INTEGRATION.md)을 참고하세요.
+기존 매물·광고 추출 기능과 커뮤니티를 유지하며, 회원 인증은 users 테이블과 서버 세션을 사용합니다. 매물·방문 기록의 소유권 연결은 후속 통합 대상입니다. 기존 광고 기능의 계약은 [통합 준비 기록](docs/sfr003/TEAM_INTEGRATION.md)을 참고하세요.
 
 ## 구조
 
@@ -22,6 +22,8 @@ backend/
   src/main/java/com/roomcrosscheck/
     listing/                 controller/service/domain/repository/dto
     extraction/              client/service/dto
+    auth/                    회원가입·로그인·세션·권한
+    community/               게시글·댓글·좋아요
 scripts/                     로컬 실행·브라우저·평가 준비 검증
 ```
 

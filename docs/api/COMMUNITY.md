@@ -57,16 +57,14 @@ PATCH에서도 위 필드를 모두 전달한다. 빈 제목·내용은 허용�
 
 ## 인증 연결
 
-2026-11-06 검토본: 별도 `demo-login` 프로필에서 서버 비밀번호 검증·세션을 연결했다. 정식 users가 아닌 시연 전용 계정이며 [범위·실행·보안 계약](DEMO_LOGIN.md)을 따른다. 아래 기본 계약은 정식 인증 통합에도 유지한다.
-
-기본 프로필에는 로그인 구현을 추가하지 않았으며 `CurrentActor.Provider` Bean이 없으면 비로그인으로 처리한다.
-로그인 담당 코드에서 이 인터페이스를 구현한 Bean을 등록하고, `current()` 호출 때마다 서버가 검증한
-인증 정보의 회원 고유번호와 관리자 여부를 제공한다. 비로그인은 null로 반환한다.
+일반 회원 인증은 [회원 인증 명세](AUTH.md)를 따른다. `CurrentActor.Provider`는
+요청 시점의 서버 세션에서 검증한 회원 고유번호와 관리자 여부를 제공한다.
+공급자가 없거나 인증된 회원이 아니면 비로그인으로 처리한다.
 사용자 번호는 `Long`이며 로그인 아이디 문자열이 아닌 `users.id`에 대응한다.
 
 공급자는 요청 본문·임의 헤더·쿼리의 사용자 번호와 권한을 신뢰하면 안 된다.
-고정 테스트 사용자 공급자는 운영에 등록하지 않는다. 실제 인증 연동 시 Security 경로 정책과
-세션·CSRF 보호도 로그인 담당 코드에서 함께 확인해야 한다. 현재 API 테스트는 실제 Security 필터 연동을 검증하지 않는다.
+고정 테스트 사용자 공급자는 운영에 등록하지 않는다. 인증 경로 정책과 세션·CSRF는 SecurityConfiguration에서 관리한다.
+MemberAuthSecurityTest에서 실제 Security 필터와 커뮤니티 권한 검사를 함께 확인하며 DB는 대역을 사용한다.
 
 `GET /session`은 `authenticated`, `userId`, `administrator`를 반환하며 비로그인은
 `false`, `null`, `false`이다. 화면의 버튼 표시용이며 쓰기 요청의 권한 검사를 대체하지 않는다.
@@ -108,3 +106,9 @@ mvn -Dtest=PostServiceTest,CommentServiceTest,PostLikeServiceTest,CommunityContr
 ```
 
 쓰기 테스트의 가짜 사용자 정보는 테스트 클래스 안에서만 생성하며 운영 인증 공급자로 등록하지 않는다.
+
+## 일반 회원 인증 연동
+
+정식 회원가입·로그인 백엔드는 [일반 회원 인증 API](AUTH.md)를 따른다.
+users 회원을 인증한 Principal로 CurrentActor를 제공하며 기존 커뮤니티 요청·응답 경로는 유지한다.
+회원가입·로그인 UI는 별도 구현 대상이다.

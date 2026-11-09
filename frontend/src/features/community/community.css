@@ -1,7 +1,4 @@
 .community .primary, .community .secondary { display: inline-flex; align-items: center; justify-content: center; }
-.community-demo-login h2 { margin-bottom: 12px; }
-.community-demo-login fieldset { border: 0; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; min-width: 0; }
-@media (max-width: 700px) { .community-demo-login fieldset { grid-template-columns: 1fr; } }
 .community-session { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 0 24px; color: #53665b; }
 .community-session p { line-height: 1.8; }
 .community-session .text-button { flex-shrink: 0; }

@@ -36,5 +36,6 @@ test("local mode never fabricates an extraction result or posts an advertisement
   await userEvent.click(screen.getByRole("button", { name: "광고 글·사진에서 가져오기" }));
   expect(screen.getByText(/현재 모드에서는 직접 입력/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Gemini 추출 시작" })).not.toBeInTheDocument();
-  expect(fetch).not.toHaveBeenCalled();
+  // 전체 fetch 금지는 계정 카드의 인증 조회까지 차단하므로 제거하고 광고·추출 요청이 없는지 검사한다.
+  expect(fetch.mock.calls.filter(([url]) => !String(url).startsWith("/api/auth/"))).toEqual([]);
 });
