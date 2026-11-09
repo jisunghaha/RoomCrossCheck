@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon, PageHeading } from "../../shared/ui/UI.jsx";
 import Modal from "../../shared/ui/Modal.jsx";
 import { createCommunityApi } from "./api.js";
-import DemoLoginPanel from "./DemoLoginPanel.jsx";
 import "./community.css";
 
 const guest = { authenticated: false, userId: null, administrator: false };
@@ -87,10 +86,10 @@ function DeleteDialog({ title, description, busy, error, onClose, onDelete }) {
 }
 
 /** 커뮤니티 목록·상세·편집 화면을 서버 인증 상태와 연결한다. */
-export default function CommunityPage({ api: providedApi }) {
+export default function CommunityPage({ api: providedApi, authRevision = 0 }) {
   const api = useMemo(() => providedApi || createCommunityApi(), [providedApi]);
   const [view, setView] = useState(route);
-  const sessionResource = useResource(useCallback(signal => api.session({ signal }), [api]));
+  const sessionResource = useResource(useCallback(signal => api.session({ signal }), [api, authRevision]));
   const session = sessionResource.data || guest;
   useEffect(() => {
     const change = () => setView(route());
@@ -103,7 +102,6 @@ export default function CommunityPage({ api: providedApi }) {
       description="방 구하기부터 일상의 작은 팁까지, 궁금한 이야기를 나눠요.">
       {view.kind === "list" && session.authenticated && <a className="primary" href="#community/new"><Icon name="plus" />글 작성</a>}
     </PageHeading>
-    {!providedApi && <DemoLoginPanel session={session} onChanged={sessionResource.retry} />}
     <div className="community-session">
       <p>{sessionResource.loading ? "로그인 상태 확인 중…" : session.authenticated
         ? `${session.administrator ? "관리자로" : "회원으로"} 이용 중입니다.`

@@ -1,5 +1,6 @@
 import { useRooms } from "../state/RoomContext.jsx";
 import { Icon } from "../../shared/ui/UI.jsx";
+import AuthPanel from "../../features/auth/AuthPanel.jsx";
 export const navigation = [
   ["rooms", "home", "관심 매물"],
   ["compare", "compare", "매물 비교"],
@@ -7,7 +8,7 @@ export const navigation = [
   ["visits", "book", "방문 체크리스트"],
   ["community", "review", "커뮤니티"],
 ];
-export default function Layout({ page, onGuide, children }) {
+export default function Layout({ page, onGuide, onSessionChange, children }) {
   const { rooms, dataMode } = useRooms();
   return (
     <>
@@ -18,14 +19,8 @@ export default function Layout({ page, onGuide, children }) {
             원룸체크<span className="brand-dot">.</span>
           </span>
         </a>
-        <div className="workspace">
-          <span className="workspace-icon">나</span>
-          <div>
-            <strong>나의 자취 준비</strong>
-            <small>첫 자취, 꼼꼼하게</small>
-          </div>
-          <span>⌄</span>
-        </div>
+        {/* 고정된 준비 카드는 제거하고 실제 인증 상태와 계정 버튼을 같은 위치로 통합한다. */}
+        <AuthPanel onSessionChange={onSessionChange} />
         <div className="nav-label">MY WORKSPACE</div>
         <nav className="workspace-navigation" aria-label="주요 메뉴">
           {navigation.map(([p, icon, title]) => (
@@ -57,14 +52,7 @@ export default function Layout({ page, onGuide, children }) {
             이용 가이드 <Icon name="arrow" />
           </button>
         </div>
-        <div className="profile">
-          <div className="avatar">나</div>
-          <div>
-            <strong>{page === "community" ? "커뮤니티" : dataMode === "local" ? "데모 사용자" : "로그인 미연결"}</strong>
-            <small>{page === "community" ? "공개 게시판 · 서버 연결" : dataMode === "listing-api" ? "매물은 로컬 개발 DB에 저장" : dataMode === "api" ? "서버 저장 모드" : "브라우저에만 저장됩니다"}</small>
-          </div>
-          <span className="demo-dot" />
-        </div>
+        {/* 중복된 하단 가상 프로필은 위 계정 카드에서 실제 회원 정보를 표시하므로 제거했다. */}
       </aside>
       <main>
         <header className="topbar">
@@ -72,7 +60,7 @@ export default function Layout({ page, onGuide, children }) {
             나의 자취 준비 <span>/</span>
             <strong>{page === "register" ? "매물 등록" : navigation.find((n) => n[0] === page)?.[2]}</strong>
           </div>
-          <span className="demo-badge">{page === "community" ? "COMMUNITY" : dataMode === "local" ? "REACT DEMO" : "SERVER"}</span>
+          {/* COMMUNITY·SERVER 배지는 제거했다. 계정 접근은 왼쪽 카드로 모으고 저장 방식은 기존 하단 안내를 유지한다. */}
         </header>
         <div className="content">{children}</div>
         <footer>

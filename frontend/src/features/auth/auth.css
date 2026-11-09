@@ -1,0 +1,41 @@
+.sidebar .workspace.auth-workspace { display: block; padding: 16px 12px 12px; }
+.auth-workspace-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.auth-workspace-heading > div { min-width: 0; }
+.auth-workspace-heading strong { font-size: 13px; }
+.auth-workspace-heading small { display: block; overflow-wrap: anywhere; margin-top: 5px; line-height: 1.6; }
+.auth-card-actions { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+.auth-card-primary, .auth-card-secondary { flex: 1; min-height: 36px; padding: 7px 4px; font-size: 12px; border-radius: 7px; }
+.auth-card-primary { background: var(--green); color: white; font-weight: 600; }
+.auth-card-secondary { color: var(--green); }
+.auth-card-secondary:hover { background: var(--pale); }
+.auth-card-note { font-size: 11px; line-height: 1.8; margin-top: 12px; overflow-wrap: anywhere; }
+dialog:has(.auth-dialog) { width: min(460px, calc(100vw - 28px)); padding: 24px 30px 30px; }
+.auth-dialog { padding-top: 8px; }
+.auth-kicker { display: block; color: var(--green); font-size: 10px; letter-spacing: 2px; margin-bottom: 8px; }
+.auth-dialog h2 { font-size: 27px; letter-spacing: -1px; }
+.auth-intro { color: var(--muted); line-height: 1.7; margin: 8px 0 24px; font-size: 13px; }
+.auth-dialog fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.auth-dialog label { display: block; font-size: 13px; font-weight: 600; margin: 18px 0 8px; }
+.auth-dialog input { width: 100%; min-width: 0; border: 1px solid #cdd8cf; border-radius: 8px; padding: 11px 12px; background: white; color: var(--ink); }
+.auth-password-field { position: relative; }
+.auth-password-field input { padding-right: 66px; }
+.auth-password-field button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 8px; font-size: 12px; color: var(--green); }
+.auth-field-help { color: var(--muted); font-size: 11px; line-height: 1.7; margin-top: 6px; }
+.auth-submit { width: 100%; margin-top: 24px; min-height: 44px; }
+.auth-error, .auth-success { font-size: 12px; line-height: 1.8; padding: 12px; border-radius: 8px; margin-top: 16px; overflow-wrap: anywhere; }
+.auth-error { background: #fff2ed; color: #914330; }
+.auth-success { background: var(--pale); color: var(--green); }
+.auth-switch { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); }
+.auth-switch button { color: var(--green); font-weight: 700; padding: 0 2px; }
+.auth-profile { margin: 0; }
+.auth-profile > div { padding: 15px 0; border-bottom: 1px solid var(--line); }
+.auth-profile dt { color: var(--muted); font-size: 12px; }
+.auth-profile dd { margin: 6px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 650px) {
+  .sidebar .workspace.auth-workspace { margin: 12px 0 0; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .auth-workspace .auth-workspace-heading small { display: block; font-size: 11px; }
+  .auth-card-actions { margin: 0; gap: 4px; }
+  .auth-card-primary, .auth-card-secondary { flex: initial; min-width: 64px; }
+  .auth-card-note { margin-top: 0; flex-basis: 100%; }
+  dialog:has(.auth-dialog) { padding: 20px; }
+}

@@ -213,3 +213,18 @@ test("community route remains accessible when listing API fails", async () => {
     expect(screen.queryByText("매물 서버 오류")).not.toBeInTheDocument();
   } finally { vi.unstubAllGlobals(); }
 });
+
+test("authentication changes refresh community permissions without resetting the current route", async () => {
+  history.replaceState(null, "", "/#community/post/p1");
+  const api = fakeApi();
+  const { rerender } = render(<CommunityPage api={api} authRevision={0} />);
+  expect(await screen.findByRole("heading", { name: post.title })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "게시글 수정" })).not.toBeInTheDocument();
+  api.session.mockResolvedValue(member);
+  rerender(<CommunityPage api={api} authRevision={1} />);
+  expect(await screen.findByRole("link", { name: "게시글 수정" })).toBeInTheDocument();
+  api.session.mockResolvedValue(guest);
+  rerender(<CommunityPage api={api} authRevision={2} />);
+  await waitFor(() => expect(screen.queryByRole("link", { name: "게시글 수정" })).not.toBeInTheDocument());
+  expect(location.hash).toBe("#community/post/p1");
+});
