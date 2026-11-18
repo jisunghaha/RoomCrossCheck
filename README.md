@@ -73,6 +73,10 @@ docker compose -f compose.yaml -f .runtime/compose.java-runtime.json down
 
 기본 down은 DB 볼륨을 삭제하지 않습니다. 백엔드는 패키지 이동 전의 클래스가 남지 않도록 clean 빌드합니다. 로컬 JPA ddl-auto=update는 팀의 Flyway V1을 대체하지 않습니다. 기존 DB 자동 변환·baseline·테이블 삭제는 수행하지 않습니다.
 
+## 운영 배포
+
+클라우드 VM 한 대에 Caddy(HTTPS·정적 파일·`/api` 프록시)·백엔드·MySQL을 Docker Compose로 올립니다. 설정은 `deploy/` 폴더에 있고, 절차는 [운영 배포 안내](deploy/README.md)를 참고하세요.
+
 ## 검증
 
 ```sh

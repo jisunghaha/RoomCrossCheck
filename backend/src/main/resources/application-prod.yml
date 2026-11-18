@@ -1,0 +1,12 @@
+# 운영 배포(deploy/compose.yaml)에서 SPRING_PROFILES_ACTIVE=prod로 켜는 설정.
+# 백엔드는 Caddy 뒤에서만 접근되므로, Caddy가 보낸 X-Forwarded-* 값으로 원래 스킴·주소를 복원한다.
+# 그래야 HTTPS 요청에서 세션·CSRF 쿠키에 Secure가 붙는다. Tomcat은 사설 IP 대역의 프록시만 신뢰한다.
+server:
+  forward-headers-strategy: native
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+# ddl-auto는 기본 설정의 update를 그대로 쓴다. 마이그레이션 도구가 없어 빈 운영 DB의 테이블을 만들 방법이 이것뿐이다.
+# 엔티티 컬럼을 삭제하거나 이름을 바꿔도 기존 컬럼은 지워지지 않는다. 배포 전 DB를 백업한다.

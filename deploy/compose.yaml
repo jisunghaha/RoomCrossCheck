@@ -1,0 +1,68 @@
+# 운영 서버(VM 1대)용 Compose. 로컬 개발용 루트 compose.yaml과 별개로 deploy/.env를 읽는다.
+# 외부에는 Caddy의 80·443만 열고, 백엔드와 MySQL은 내부 네트워크에서만 접근한다.
+name: roomcrosscheck
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: roomcrosscheck
+      MYSQL_USER: room_app
+      MYSQL_PASSWORD: ${ROOM_DB_PASSWORD:?Set ROOM_DB_PASSWORD in deploy/.env}
+      MYSQL_ROOT_PASSWORD: ${ROOM_DB_ROOT_PASSWORD:?Set ROOM_DB_ROOT_PASSWORD in deploy/.env}
+    volumes:
+      - room_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../deploy/backend.Dockerfile
+    restart: unless-stopped
+    volumes:
+      - room_uploads:/data/advertisements
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=60}
+      AD_STORAGE_DIR: /data/advertisements
+      DB_URL: jdbc:mysql://db:3306/roomcrosscheck
+      DB_USER: room_app
+      DB_PASSWORD: ${ROOM_DB_PASSWORD:?Set ROOM_DB_PASSWORD in deploy/.env}
+      GEMINI_ENABLED: ${GEMINI_ENABLED:-false}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
+      BUILDING_REGISTER_API_KEY: ${BUILDING_REGISTER_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    restart: unless-stopped
+    environment:
+      # 빈 값을 Caddy에 넘기면 사이트 블록이 전역 옵션으로 해석되므로 여기서 :80 기본값을 채운다.
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+volumes:
+  room_mysql:
+  room_uploads:
+  caddy_data:
+  caddy_config:
