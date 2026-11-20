@@ -11,7 +11,7 @@ export class AuthApiError extends Error {
  * @param {Object} [options] 테스트용 요청 함수와 요청 제한 시간
  * @return {Object} 본인 조회·가입·로그인·로그아웃 요청 함수
  */
-export function createAuthApi({ fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
+export function createAuthApi({ fetchImpl = globalThis.fetch, timeoutMs = 30000 } = {}) {
   function member(value) {
     if (!Number.isSafeInteger(value?.id) || value.id <= 0
         || !["loginId", "nickname", "email"].every(key => typeof value[key] === "string" && value[key].length > 0)
@@ -72,5 +72,13 @@ export function createAuthApi({ fetchImpl = globalThis.fetch, timeoutMs = 15000 
     async logout() {
       await write("logout");
     },
+    /** 가입 여부와 관계없이 같은 안내 문구를 돌려준다. */
+    requestPasswordReset: email => write("password-reset/request", JSON.stringify({ email }), "application/json"),
+    confirmPasswordReset: ({ email, code, newPassword }) => write("password-reset/confirm",
+      JSON.stringify({ email, code, newPassword }), "application/json"),
+    changePassword: (currentPassword, newPassword) => write("password",
+      JSON.stringify({ currentPassword, newPassword }), "application/json"),
+    /** 탈퇴하면 서버 세션이 끝나므로 이후 화면은 비로그인 상태로 다시 확인한다. */
+    withdraw: password => write("withdraw", JSON.stringify({ password }), "application/json"),
   };
 }

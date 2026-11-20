@@ -14,4 +14,8 @@ public interface ListingRepository extends JpaRepository<Listing, String> {
     List<Listing> findAllByIdInAndOwnerId(Collection<String> ids, Long ownerId);
     boolean existsByOwnerIdAndBuilding(Long ownerId, String building);
     Optional<Listing> findFirstByOwnerIdAndBuildingOrderByCreatedAtDesc(Long ownerId, String building);
+    boolean existsByOwnerIdAndAddressKey(Long ownerId, String addressKey);
+    boolean existsByOwnerIdAndAddressKeyAndIdNot(Long ownerId, String addressKey, String id);
+    boolean existsByAdvertisementId(String advertisementId);
+    List<Listing> findAllByAddressKeyIsNull();
 }

@@ -28,8 +28,9 @@ export default function RegisterRoomPage({ navigate }) {
     setAdvertisementId(id);
     preview(input, 2);
   }
+  // 광고에서 시작한 등록은 광고 ID를 함께 보내 서버가 광고와 매물을 1:1로 연결하고 중복 등록을 막게 한다.
   async function save() {
-    if (await saveRoom(values)) navigate("rooms");
+    if (await saveRoom(advertisementId ? { ...values, advertisementId } : values)) navigate("rooms");
   }
 
   return <>

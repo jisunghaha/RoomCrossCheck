@@ -12,7 +12,7 @@ export class CommunityApiError extends Error {
  * @param {Object} [options] API 기본 경로, 요청 함수와 제한 시간
  * @return {Object} 게시글·댓글·좋아요 및 인증 상태 요청 함수
  */
-export function createCommunityApi({ baseUrl = "/api", fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
+export function createCommunityApi({ baseUrl = "/api", fetchImpl = globalThis.fetch, timeoutMs = 30000 } = {}) {
   const base = `${baseUrl.replace(/\/$/, "")}/community`;
   const path = id => `/posts/${encodeURIComponent(id)}`;
 

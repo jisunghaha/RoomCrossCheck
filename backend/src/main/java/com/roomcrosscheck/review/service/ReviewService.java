@@ -64,12 +64,15 @@ public class ReviewService {
      * @param request 검증된 후기 입력
      * @param author 로그인 회원
      * @return 저장한 후기
-     * @throws ResponseStatusException 점수 형식 오류 400, 본인 매물의 건물이 아니면 404
+     * @throws ResponseStatusException 점수 형식 오류 400, 본인 매물의 건물이 아니면 404, 같은 건물에 이미 쓴 후기가 있으면 409
      */
     @Transactional
     public ReviewResponse create(ReviewRequest request, MemberPrincipal author) {
         Listing listing = listings.findFirstByOwnerIdAndBuildingOrderByCreatedAtDesc(author.userId(), request.building())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "후기를 남길 건물을 내 매물에서 선택해 주세요."));
+        if (reviews.existsByAuthorIdAndBuildingKey(author.userId(), listing.building)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이 건물에는 이미 후기를 남겼습니다. 기존 후기를 삭제한 뒤 다시 작성해 주세요.");
+        }
         var scores = new LinkedHashMap<String, Integer>();
         for (var entry : request.scores().entrySet()) {
             if (!BuildingReview.CATEGORIES.contains(entry.getKey())) throw bad("알 수 없는 평가 항목입니다.");

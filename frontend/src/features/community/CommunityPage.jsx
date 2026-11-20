@@ -7,7 +7,8 @@ import "./community.css";
 
 const guest = { authenticated: false, userId: null, administrator: false };
 const postLink = id => `#community/post/${encodeURIComponent(id)}`;
-const author = id => `회원 #${id}`;
+// 탈퇴한 회원의 글은 작성자 번호가 비어 있다.
+const author = id => (id == null ? "탈퇴한 회원" : `회원 #${id}`);
 const date = value => value ? new Date(value).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" }) : "";
 const owns = (item, session) => session.authenticated && session.userId === item.authorId;
 const managesPost = (post, session) => session.authenticated && (session.administrator || (!post.notice && owns(post, session)));

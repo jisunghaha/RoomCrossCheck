@@ -90,6 +90,61 @@ SFR-001 권한 보완, SFR-009~011 방문·비교, SFR-017~019 후기·통계·�
   - 이미 처리된 신고는 409입니다.
 - 관리자 계정을 만드는 API는 없습니다. DB에서 `users.role`을 `ADMIN`으로 바꿉니다.
 
+## 계정 관리 (SFR-001)
+
+| 요청 | 로그인 | 설명 |
+|---|---|---|
+| `POST /api/auth/password-reset/request` `{email}` | 불필요 | 가입 이메일로 6자리 코드 발송. 가입 여부와 관계없이 같은 200 응답. 같은 회원은 60초에 한 번 |
+| `POST /api/auth/password-reset/confirm` `{email, code, newPassword}` | 불필요 | 코드 확인 후 비밀번호 변경. 10분 유효, 5회 틀리면 사용 불가, 한 번 쓰면 폐기 |
+| `POST /api/auth/password` `{currentPassword, newPassword}` | 필요 | 현재 비밀번호 확인 후 변경 |
+| `POST /api/auth/withdraw` `{password}` | 필요 | 비밀번호 확인 후 탈퇴, 세션 종료 |
+
+- 새 비밀번호는 8자 이상, UTF-8 72바이트 이하입니다.
+- 코드는 BCrypt 해시로만 `password_reset_codes`에 저장합니다.
+- 메일은 `deploy/.env`의 `MAIL_HOST`·`MAIL_PORT`·`MAIL_USERNAME`·`MAIL_PASSWORD`·`MAIL_FROM`(SMTP)으로 보냅니다. `MAIL_HOST`가 비어 있으면 메일 대신 백엔드 로그에 `회원 #번호 코드 123456` 형식으로 남깁니다(이메일 주소는 남기지 않음).
+- 탈퇴하면 매물·광고(이미지 파일 포함)·방문 기록·체크리스트·비교 선택·좋아요·재설정 코드가 삭제됩니다. 게시글·댓글·후기·신고 기록은 남고 작성자 번호만 비워져 화면에 '탈퇴한 회원'으로 보입니다.
+- 비밀번호 변경·탈퇴 시 다른 기기의 세션은 즉시 끊기지 않습니다. 탈퇴한 회원의 세션은 다음 요청부터 자료를 읽거나 쓸 수 없습니다.
+
+## DB 제약 (SIR-001)
+
+서버가 시작할 때 `common.SchemaConstraints`가 information_schema를 확인해 빠진 제약만 추가합니다. 여러 번 실행해도 결과가 같습니다. 기존 자료가 제약을 어기면 그 제약은 건너뛰고 경고 로그를 남깁니다. 없는 회원·매물을 가리키는 고아 값은 NULL 허용 컬럼이면 NULL로 바꾸고, 아니면 행을 지운 뒤 적용합니다.
+
+외래키 (참조 대상은 모두 `id`)
+
+| 제약 | 컬럼 → 참조 | 삭제 시 |
+|---|---|---|
+| `fk_listings_owner` | listings.owner_id → users | CASCADE |
+| `fk_listings_advertisement` | listings.advertisement_id → advertisements | SET NULL |
+| `fk_advertisements_owner` | advertisements.owner_id → users | CASCADE |
+| `fk_visit_records_listing` | visit_records.listing_id → listings | CASCADE |
+| `fk_visit_records_owner` | visit_records.owner_id → users | CASCADE |
+| `fk_member_preferences_user` | member_preferences.user_id → users | CASCADE |
+| `fk_password_reset_codes_user` | password_reset_codes.user_id → users | CASCADE |
+| `fk_oauth_accounts_user` | oauth_accounts.user_id → users | CASCADE |
+| `fk_community_post_likes_user` | community_post_likes.user_id → users | CASCADE |
+| `fk_community_posts_author` | community_posts.author_id → users | SET NULL |
+| `fk_community_comments_author` | community_comments.author_id → users | SET NULL |
+| `fk_building_reviews_author` | building_reviews.author_id → users | SET NULL |
+| `fk_reports_reporter` / `fk_reports_target_author` / `fk_reports_handler` | reports.* → users | SET NULL |
+
+고유 제약 (중복 방지)
+
+| 제약 | 컬럼 | 막는 것 |
+|---|---|---|
+| `uk_users_login_id`, `uk_users_email` | users.login_id / email | 같은 아이디·이메일로 다시 가입 |
+| `uk_listings_advertisement` | listings.advertisement_id | 한 광고로 매물을 두 번 등록 |
+| `uk_listings_owner_address` | listings.owner_id, address_key | 같은 회원이 같은 주소(동·호 포함)를 두 번 저장 |
+| `uk_building_reviews_author_building` | building_reviews.author_id, building_key | 같은 회원이 같은 건물에 후기를 두 번 작성 |
+| `uk_reports_target_reporter` | reports.target_type, target_id, reporter_id | 같은 대상을 두 번 신고 |
+| `uk_community_post_likes_post_user` | community_post_likes.post_id, user_id | 같은 글에 좋아요 두 번 |
+| 기본키 | visit_records.listing_id, member_preferences.user_id | 매물당 방문 기록·회원당 설정 한 건 |
+
+`address_key`는 괄호 참고주소·공백·쉼표를 지우고 소문자로 바꾼 전체 주소입니다. 건물 키와 달리 동·층·호를 남겨 같은 건물의 다른 호실은 따로 저장할 수 있습니다. 서버 API도 같은 규칙으로 먼저 검사해 409와 안내 문구를 돌려줍니다.
+
+## 응답 시간
+
+화면의 서버 요청 대기 시간과 서버의 Gemini 응답 대기 시간은 모두 30초입니다.
+
 ## 스키마
 
 로컬·운영 모두 JPA `ddl-auto=update`로 새 테이블(`visit_records`, `member_preferences`, `building_reviews`, `reports`)과 `owner_id` 컬럼을 추가합니다. 기존 데이터는 지우지 않습니다. 팀 Flyway DB로 옮길 때는 별도 마이그레이션이 필요합니다.

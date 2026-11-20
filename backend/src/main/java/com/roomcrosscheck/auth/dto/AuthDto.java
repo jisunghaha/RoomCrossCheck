@@ -36,6 +36,29 @@ public final class AuthDto {
         @Override public String toString() { return "SignupRequest[credentials omitted]"; }
     }
 
+    /** 비밀번호 찾기 인증 코드 요청. */
+    public record PasswordResetRequest(@NotBlank @Email @Size(max = 254) String email) {}
+
+    /** 인증 코드 확인과 새 비밀번호 설정 요청. */
+    public record PasswordResetConfirm(
+        @NotBlank @Email @Size(max = 254) String email,
+        @NotBlank @Pattern(regexp = "\\d{6}") String code,
+        @NotBlank @Size(min = 8, max = 72) String newPassword
+    ) {
+        @Override public String toString() { return "PasswordResetConfirm[credentials omitted]"; }
+    }
+
+    /** 로그인한 회원의 비밀번호 변경 요청. */
+    public record PasswordChangeRequest(@NotBlank @Size(max = 72) String currentPassword,
+            @NotBlank @Size(min = 8, max = 72) String newPassword) {
+        @Override public String toString() { return "PasswordChangeRequest[credentials omitted]"; }
+    }
+
+    /** 회원 탈퇴 요청. 본인 확인을 위해 현재 비밀번호를 받는다. */
+    public record WithdrawRequest(@NotBlank @Size(max = 72) String password) {
+        @Override public String toString() { return "WithdrawRequest[credentials omitted]"; }
+    }
+
     /** 회원 본인에게 반환하는 정보이며 내부 번호와 로그인 아이디를 구분한다. */
     public record MemberResponse(Long id, String loginId, String nickname, String email, UserRole role) {
         public static MemberResponse from(User user) {

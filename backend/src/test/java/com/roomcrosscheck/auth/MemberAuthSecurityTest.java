@@ -47,10 +47,16 @@ class MemberAuthSecurityTest {
     @Configuration(proxyBeanMethods = false)
     @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
     @Import({SecurityConfiguration.class, AuthController.class,
-        AuthService.class, MemberUserDetailsService.class, CommunityController.class,
-        PostService.class, CommentService.class, PostLikeService.class})
+        AuthService.class, AccountService.class, ResetCodeMailer.class, MemberUserDetailsService.class,
+        CommunityController.class, PostService.class, CommentService.class, PostLikeService.class})
     static class TestApp {
         @Bean UserRepository users() { return mock(UserRepository.class); }
+        @Bean com.roomcrosscheck.auth.repository.PasswordResetCodeRepository resetCodes() {
+            return mock(com.roomcrosscheck.auth.repository.PasswordResetCodeRepository.class);
+        }
+        @Bean com.roomcrosscheck.listing.repository.AdvertisementRepository advertisements() {
+            return mock(com.roomcrosscheck.listing.repository.AdvertisementRepository.class);
+        }
         @Bean PostRepository posts() { return mock(PostRepository.class); }
         @Bean CommentRepository comments() { return mock(CommentRepository.class); }
         @Bean PostLikeRepository likes() { return mock(PostLikeRepository.class); }

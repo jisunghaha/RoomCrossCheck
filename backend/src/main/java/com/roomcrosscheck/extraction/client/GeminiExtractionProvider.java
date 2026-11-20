@@ -81,7 +81,8 @@ public class GeminiExtractionProvider implements ExtractionProvider {
             request.putObject("generationConfig").put("responseMimeType", "application/json");
             var httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/models/" + model + ":generateContent"))
-                .timeout(Duration.ofSeconds(60))
+                // 화면의 서버 응답 대기 시간(30초)과 맞춘다. 초과하면 추출 실패로 기록하고 재시도할 수 있다.
+                .timeout(Duration.ofSeconds(30))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request)))

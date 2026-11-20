@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface BuildingReviewRepository extends JpaRepository<BuildingReview, String> {
     List<BuildingReview> findAllByBuildingKeyInOrderByCreatedAtDesc(Collection<String> buildingKeys);
     List<BuildingReview> findAllByBuildingKey(String buildingKey);
+    boolean existsByAuthorIdAndBuildingKey(Long authorId, String buildingKey);
 }

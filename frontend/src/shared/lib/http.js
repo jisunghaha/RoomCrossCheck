@@ -26,7 +26,7 @@ function csrfToken() {
  * @param {Object} [options] API 기본 경로, 요청 함수와 제한 시간
  * @return {function(string, Object=): Promise<*>} 경로와 {method, json, form, headers}를 받아 JSON 응답을 돌려주는 함수
  */
-export function createApiClient({ baseUrl = "/api", fetchImpl = (...args) => globalThis.fetch(...args), timeoutMs = 15000 } = {}) {
+export function createApiClient({ baseUrl = "/api", fetchImpl = (...args) => globalThis.fetch(...args), timeoutMs = 30000 } = {}) {
   // 기본 요청 함수는 호출 시점의 fetch를 사용해 테스트 대역과 브라우저 확장 교체를 따른다.
   const base = baseUrl.replace(/\/$/, "");
   return async function request(path, { method = "GET", json, form, headers = {} } = {}) {

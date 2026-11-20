@@ -68,6 +68,13 @@ public class User {
         return user;
     }
 
+    /**
+     * 비밀번호를 바꾼다. 해시 계산과 길이 검증은 서비스에서 끝낸 값을 받는다.
+     *
+     * @param passwordHash 새 BCrypt 해시
+     */
+    public void changePassword(String passwordHash) { this.passwordHash = passwordHash; }
+
     public Long getId() { return id; }
     public String getLoginId() { return loginId; }
     public String getPasswordHash() { return passwordHash; }

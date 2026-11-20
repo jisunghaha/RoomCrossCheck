@@ -26,7 +26,7 @@ function visit(value) {
 }
 
 // Backend adapter: IDs, ownership and timestamps are assigned by the server.
-export function createApiRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
+export function createApiRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, timeoutMs = 30000 } = {}) {
   async function request(path, method = "GET", body) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -173,7 +173,7 @@ export function createListingRepository({ baseUrl = "/api", fetchImpl = globalTh
       };
     },
     async saveRoom(values, listingId) {
-      const payload = Object.fromEntries(["name", "address", "deposit", "rent", "fee", "area", "areaType", "floor", "original"].map(key => [key, values[key] ?? null]));
+      const payload = Object.fromEntries(["name", "address", "deposit", "rent", "fee", "area", "areaType", "floor", "original", "advertisementId"].map(key => [key, values[key] ?? null]));
       return asRoom(room({ ...await api(listingId ? `/listings/${id(listingId)}` : "/listings",
         { method: listingId ? "PATCH" : "POST", json: payload }), tags: [] }));
     },

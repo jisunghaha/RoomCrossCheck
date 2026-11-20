@@ -27,10 +27,10 @@ public class Comment {
     public Post post;
 
     /**
-     * 댓글 작성자의 사용자 ID.
-     * 사용자 테이블과의 외래키 연결은 없으며, JPA 갱신 대상에서 제외한다.
+     * 댓글 작성자의 사용자 ID. JPA 갱신 대상에서 제외한다.
+     * users 외래키는 common.SchemaConstraints가 적용하며, 작성자가 탈퇴하면 null이 되고 댓글은 남는다.
      */
-    @Column(name = "author_id", nullable = false, updatable = false, columnDefinition = "bigint unsigned")
+    @Column(name = "author_id", updatable = false, columnDefinition = "bigint unsigned")
     public Long authorId;
 
     @Column(nullable = false, columnDefinition = "text")

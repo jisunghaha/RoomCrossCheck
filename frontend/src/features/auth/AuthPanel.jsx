@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../../shared/ui/Modal.jsx";
 import { createAuthApi } from "./api.js";
+import { PasswordChangeForm, PasswordResetForm, WithdrawForm } from "./AccountForms.jsx";
 import "./auth.css";
 
 /** 왼쪽 계정 카드와 인증 모달을 관리하고, 확인한 회원 정보(비로그인은 null)를 앱에 알린다. */
@@ -65,13 +66,30 @@ export default function AuthPanel({ onSessionChange, api: providedApi }) {
         </div>}
       {error && <div className="auth-card-note" role="alert">{error}<button className="text-button" onClick={refresh} disabled={busy}>상태 다시 확인</button></div>}
     </section>
-    {dialog && <Modal title={{ login: "로그인", signup: "회원가입", profile: "내 정보" }[dialog.type]} onClose={() => { if (!lock.current) setDialog(null); }}>
-      {dialog.type === "profile" && member ? <section className="auth-dialog">
+    {dialog && <Modal title={{ login: "로그인", signup: "회원가입", profile: "내 정보", reset: "비밀번호 찾기",
+      password: "비밀번호 변경", withdraw: "회원 탈퇴" }[dialog.type]} onClose={() => { if (!lock.current) setDialog(null); }}>
+      {dialog.type === "reset" ? <PasswordResetForm api={api} lock={lock} onBack={() => setDialog({ type: "login" })}
+        onDone={message => setDialog({ type: "login", message })} />
+      : dialog.type === "password" && member ? <PasswordChangeForm api={api} lock={lock}
+        onBack={() => setDialog({ type: "profile" })} onDone={message => setDialog({ type: "profile", message })} />
+      : dialog.type === "withdraw" && member ? <WithdrawForm api={api} lock={lock} onBack={() => setDialog({ type: "profile" })}
+        onDone={() => {
+          revision.current++;
+          setMember(null);
+          setDialog({ type: "login", message: "탈퇴가 완료됐어요. 이용해 주셔서 감사합니다." });
+          onSessionChange?.(null);
+        }} />
+      : dialog.type === "profile" && member ? <section className="auth-dialog">
         <h2>내 정보</h2><p className="auth-intro">내 계정에 등록된 정보를 확인하세요.</p>
+        {dialog.message && <p className="auth-success" role="status">{dialog.message}</p>}
         <dl className="auth-profile">{[["아이디", member.loginId], ["닉네임", member.nickname], ["이메일", member.email]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
         <button className="primary auth-submit" onClick={() => setDialog(null)}>확인</button>
+        <div className="auth-switch">
+          <button type="button" onClick={() => setDialog({ type: "password" })}>비밀번호 변경</button>
+          <button type="button" className="danger" onClick={() => setDialog({ type: "withdraw" })}>회원 탈퇴</button>
+        </div>
       </section> : <AuthForm key={dialog.type} mode={dialog.type} initialId={dialog.loginId || ""} message={dialog.message}
-        onSwitch={type => setDialog({ type })} api={api} lock={lock}
+        onSwitch={type => setDialog({ type })} onForgot={() => setDialog({ type: "reset" })} api={api} lock={lock}
         onLogin={value => {
           revision.current++;
           setMember(value); setError(""); setDialog(null); onSessionChange?.(value);
@@ -80,7 +98,7 @@ export default function AuthPanel({ onSessionChange, api: providedApi }) {
   </>;
 }
 
-function AuthForm({ mode, initialId, message, api, lock, onSwitch, onLogin, onSignup }) {
+function AuthForm({ mode, initialId, message, api, lock, onSwitch, onForgot, onLogin, onSignup }) {
   const signup = mode === "signup";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -125,6 +143,7 @@ function AuthForm({ mode, initialId, message, api, lock, onSwitch, onLogin, onSi
         </>}
         {error && <p className="auth-error" role="alert">{error}</p>}
         <button className="primary auth-submit" type="submit">{busy ? "처리 중…" : signup ? "회원가입" : "로그인"}</button>
+        {!signup && onForgot && <button className="text-button" type="button" onClick={onForgot}>비밀번호를 잊으셨나요?</button>}
       </fieldset>
     </form>
     <div className="auth-switch"><span>{signup ? "이미 계정이 있으신가요?" : "아직 계정이 없으신가요?"}</span>

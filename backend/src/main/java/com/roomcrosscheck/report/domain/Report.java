@@ -38,7 +38,8 @@ public class Report {
     @Column(name = "post_id", length = 36, updatable = false)
     public String postId;
 
-    @Column(name = "reporter_id", nullable = false, updatable = false, columnDefinition = "bigint unsigned")
+    /** 신고한 회원 users.id. 신고자가 탈퇴하면 null이 되고 신고 기록은 남는다. */
+    @Column(name = "reporter_id", updatable = false, columnDefinition = "bigint unsigned")
     public Long reporterId;
 
     @Column(name = "target_author_id", updatable = false, columnDefinition = "bigint unsigned")

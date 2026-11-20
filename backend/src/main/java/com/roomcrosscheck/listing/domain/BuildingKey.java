@@ -36,6 +36,17 @@ public final class BuildingKey {
     }
 
     /**
+     * 같은 회원의 중복 매물을 막는 전체 주소 키를 만든다. 건물 키와 달리 동·층·호를 남긴다.
+     *
+     * @param address 사용자가 입력한 주소
+     * @return 괄호 참고주소·공백·쉼표를 지우고 소문자로 바꾼 주소, 최대 255자
+     */
+    public static String ofFullAddress(String address) {
+        String base = address == null ? "" : address.replaceAll("\\([^)]*\\)", " ");
+        return limit(base.replaceAll("[\\s,]+", "").toLowerCase(Locale.ROOT));
+    }
+
+    /**
      * 공개 후기에 표시할 건물 주소를 만든다. 개인정보가 드러나지 않도록 끝의 동·층·호를 지운다.
      *
      * @param address 사용자가 입력한 주소

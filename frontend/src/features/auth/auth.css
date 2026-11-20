@@ -39,3 +39,7 @@ dialog:has(.auth-dialog) { width: min(460px, calc(100vw - 28px)); padding: 24px 
   .auth-card-note { margin-top: 0; flex-basis: 100%; }
   dialog:has(.auth-dialog) { padding: 20px; }
 }
+/* 내 정보의 탈퇴 버튼과 탈퇴 확인 버튼은 되돌릴 수 없는 동작이라 경고 색으로 구분한다. */
+.auth-switch button.danger { color: #b3261e; }
+.auth-submit.danger { background: #b3261e; }
+.auth-agree { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0; font-size: 13px; }

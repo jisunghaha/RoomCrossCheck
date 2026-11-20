@@ -49,9 +49,11 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(requests -> requests
                 .requestMatchers(HttpMethod.GET, "/api/auth/config", "/api/auth/csrf", "/api/community/**",
                     "/api/reviews").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
+                    "/api/auth/password-reset/request", "/api/auth/password-reset/confirm").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/auth/me", "/api/auth/logout", "/api/community/**",
+                .requestMatchers("/api/auth/me", "/api/auth/logout", "/api/auth/password", "/api/auth/withdraw",
+                    "/api/community/**",
                     "/api/listings", "/api/listings/**", "/api/advertisements", "/api/advertisements/**",
                     "/api/visits", "/api/visit-checklist", "/api/comparison",
                     "/api/reviews", "/api/reviews/**", "/api/reports").authenticated()
