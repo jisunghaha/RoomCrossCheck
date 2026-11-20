@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/roomcrosscheck}
+    username: ${DB_USER:room_app}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  # 비밀번호 찾기 메일 발송. MAIL_HOST가 비어 있으면 메일 대신 서버 로그에 인증 코드를 남긴다.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+ads:
+  storage-dir: ${AD_STORAGE_DIR:/tmp/roomcrosscheck-ads}
+gemini:
+  enabled: ${GEMINI_ENABLED:false}
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
+  base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+server:
+  address: 0.0.0.0
+building-register:
+  api-key: ${BUILDING_REGISTER_API_KEY:}
+  base-url: ${BUILDING_REGISTER_BASE_URL:https://apis.data.go.kr/1613000/BldRgstHubService}
+mail:
+  from: ${MAIL_FROM:}

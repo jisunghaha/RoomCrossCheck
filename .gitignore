@@ -6,3 +6,7 @@ dist/
 .env.*
 !.env.example
 coverage/
+backend/target/
+backend/.mvn-cache/
+.runtime/
+__pycache__/

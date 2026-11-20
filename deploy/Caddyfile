@@ -1,0 +1,38 @@
+# SITE_ADDRESS가 없으면 :80으로 HTTP만 제공한다(도메인 없이 서버 IP로 확인하는 단계).
+# 빈 문자열은 기본값으로 바뀌지 않으므로 deploy/compose.yaml에서 :80을 채워 넘긴다.
+# 도메인을 넣으면 Caddy가 Let's Encrypt 인증서를 자동 발급하고 HTTP를 HTTPS로 전환한다.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# 백엔드 multipart 한도(11MB)보다 약간 크게 두어 백엔드가 크기 오류를 직접 응답하게 한다.
+	request_body {
+		max_size 12MB
+	}
+
+	# reverse_proxy는 X-Forwarded-For·Proto·Host를 붙이며, 백엔드는 이 값으로 HTTPS 여부를 판단한다.
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	# 빌드 파일 이름에 내용 해시가 붙으므로 오래 캐시해도 새 배포와 섞이지 않는다.
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		root * /srv
+		file_server
+	}
+
+	# 해시 라우팅 SPA이므로 없는 경로는 index.html로 돌려준다.
+	# index.html은 매번 서버에 확인하게 해 배포 직후에도 새 번들 이름을 받게 한다.
+	handle {
+		header Cache-Control "no-cache"
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
