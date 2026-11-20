@@ -15,6 +15,8 @@ Object.defineProperty(window, "localStorage", {
 });
 beforeEach(() => {
   localStorage.clear();
+  // 서버 쓰기 요청은 CSRF 쿠키가 있어야 한다. 쿠키 발급 요청이 각 테스트의 fetch 순서에 끼지 않도록 미리 둔다.
+  document.cookie = "XSRF-TOKEN=test-csrf; path=/";
   history.replaceState(null, "", "/#rooms");
 });
 afterEach(() => {

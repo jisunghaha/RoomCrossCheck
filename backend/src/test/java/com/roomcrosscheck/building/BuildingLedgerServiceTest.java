@@ -40,7 +40,7 @@ class BuildingLedgerServiceTest {
     }
     @Test void forgedSelectionAndStaleSearchCannotOverwriteOfficialRecord() throws Exception {
         var client=mock(BuildingLedgerClient.class); var repo=mock(ListingRepository.class);
-        Listing listing=new Listing(new ListingRequest("테스트","서울 강남구 테헤란로 152",null,null,null,new BigDecimal("20"),"전용",3,null));
+        Listing listing=new Listing(new ListingRequest("테스트","서울 강남구 테헤란로 152",null,null,null,new BigDecimal("20"),"전용",3,null), 1L);
         when(repo.findById(listing.id)).thenReturn(Optional.of(listing));
         when(client.lookup(anyString(),any(),isNull(),isNull())).thenReturn(new BuildingLedgerClient.Lookup(List.of(mapper.readTree("{\"mgmBldrgstPk\":\"b\",\"newPlatPlc\":\"서울특별시 강남구 테헤란로 152\"}")),java.time.Instant.parse("2026-11-03T00:00:00Z"),false));
         var service=new BuildingLedgerService(client,repo);
@@ -53,7 +53,7 @@ class BuildingLedgerServiceTest {
     }
     @Test void editingListingInvalidatesOfficialSnapshot() {
         var r=new ListingRequest("테스트","주소",null,null,null,null,"미상",null,null);
-        Listing listing=new Listing(r);
+        Listing listing=new Listing(r, 1L);
         listing.official=new OfficialRecord("공식","날짜","id","주소","","","","","","",1,0,"건물",null,"전용",null,true);
         listing.update(r); assertNull(listing.official);
     }

@@ -101,8 +101,9 @@ export function AuditBadge({ room }) {
     </span>
   );
 }
-export function RatingGrid({ reviews, building }) {
-  const stats = statistics(reviews, building);
+/** 건물의 항목별 평균을 막대로 보여 준다. stats를 주면 서버 통계를, 없으면 후기 목록으로 계산한 값을 쓴다. */
+export function RatingGrid({ reviews, building, stats: provided }) {
+  const stats = provided || statistics(reviews, building);
   return (
     <div className="rating-grid">
       {stats.items.map((item) => (

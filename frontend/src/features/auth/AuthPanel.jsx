@@ -3,7 +3,7 @@ import Modal from "../../shared/ui/Modal.jsx";
 import { createAuthApi } from "./api.js";
 import "./auth.css";
 
-/** 왼쪽 계정 카드와 인증 모달을 관리하고, 인증 변경을 커뮤니티 화면에 알린다. */
+/** 왼쪽 계정 카드와 인증 모달을 관리하고, 확인한 회원 정보(비로그인은 null)를 앱에 알린다. */
 export default function AuthPanel({ onSessionChange, api: providedApi }) {
   const api = useMemo(() => providedApi || createAuthApi(), [providedApi]);
   const [member, setMember] = useState(null);
@@ -21,7 +21,7 @@ export default function AuthPanel({ onSessionChange, api: providedApi }) {
       setMember(value);
       if (!value) setDialog(currentDialog => currentDialog?.type === "profile" ? null : currentDialog);
       setError("");
-      onSessionChange?.();
+      onSessionChange?.(value);
     } catch (failure) {
       if (current === revision.current) setError(failure.message);
     } finally {
@@ -45,7 +45,7 @@ export default function AuthPanel({ onSessionChange, api: providedApi }) {
       await api.logout();
       setMember(null);
       setDialog(null);
-      onSessionChange?.();
+      onSessionChange?.(null);
     } catch (failure) {
       await refresh();
       setError(failure.message);
@@ -74,7 +74,7 @@ export default function AuthPanel({ onSessionChange, api: providedApi }) {
         onSwitch={type => setDialog({ type })} api={api} lock={lock}
         onLogin={value => {
           revision.current++;
-          setMember(value); setError(""); setDialog(null); onSessionChange?.();
+          setMember(value); setError(""); setDialog(null); onSessionChange?.(value);
         }} onSignup={loginId => setDialog({ type: "login", loginId, message: "회원가입이 완료됐어요. 새 계정으로 로그인해 주세요." })} />}
     </Modal>}
   </>;

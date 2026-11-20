@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-const routes = ["rooms", "register", "compare", "reviews", "visits", "community"];
+const routes = ["rooms", "register", "compare", "reviews", "visits", "community", "reports"];
 const current = () =>
   location.hash.startsWith("#community/") ? "community"
     : routes.includes(location.hash.slice(1)) ? location.hash.slice(1) : "rooms";

@@ -1,10 +1,10 @@
 # RoomCrossCheck
 
-커뮤니티와 일반 회원 인증을 통합한 개발 브랜치입니다. 왼쪽 계정 카드의 회원가입·로그인 화면은 [회원 인증 명세](docs/api/AUTH.md)의 API와 연결합니다. 구글 OAuth, 개인 매물·방문 기록의 소유권 검사는 후속 작업입니다.
+커뮤니티와 일반 회원 인증을 통합한 개발 브랜치입니다. 왼쪽 계정 카드의 회원가입·로그인 화면은 [회원 인증 명세](docs/api/AUTH.md)의 API와 연결합니다. 매물·광고·방문 기록·체크리스트·비교 선택은 로그인 회원 본인만 다루며, 거주 후기·통계·신고는 서버에 저장합니다([회원 데이터·후기·신고 API](docs/api/MEMBER_DATA.md)). 구글 OAuth는 후속 작업입니다.
 
 원룸 광고 원본을 저장하고, Gemini 추출값을 사용자가 확인·수정한 뒤 매물로 등록하는 React·Spring Boot·MySQL 로컬 개발 프로젝트입니다.
 
-기존 매물·광고 추출 기능과 커뮤니티를 유지하며, 회원 인증은 users 테이블과 서버 세션을 사용합니다. 매물·방문 기록의 소유권 연결은 후속 통합 대상입니다. 기존 광고 기능의 계약은 [통합 준비 기록](docs/sfr003/TEAM_INTEGRATION.md)을 참고하세요.
+기존 매물·광고 추출 기능과 커뮤니티를 유지하며, 회원 인증은 users 테이블과 서버 세션을 사용합니다. 매물·광고·방문 기록은 등록한 회원에게만 보입니다. 기존 광고 기능의 계약은 [통합 준비 기록](docs/sfr003/TEAM_INTEGRATION.md)을 참고하세요.
 
 ## 구조
 
@@ -58,7 +58,7 @@ VITE_DATA_MODE=listing-api VITE_API_BASE_URL=/api npm run dev
 
 광고 원본·AI 추출값·광고 확인 값·매물 폼에서 수정한 값은 별개입니다. 공식 건축물 정보에 광고 값을 넣지 않습니다. 직접 입력의 임시 매물 저장과 팀의 DRAFT 매물 이어가기는 서버 계약 합의 후 연결할 범위입니다. 광고 원본 임시 저장은 현재 동작합니다.
 
-`listing-api` 모드는 현재 `listings`·`advertisements`를 사용하는 로컬 개발용 연결입니다. `api` 모드의 `/rooms` 등은 별도 서버 계약이며 팀의 실제 업무 API가 구현됐다는 뜻이 아닙니다. 로그인과 소유권 검증은 구현하지 않았고, 임의 사용자 ID를 요청에 넣지 않습니다. 후기·방문 기록은 listing-api 모드에서도 브라우저에 남습니다.
+`listing-api` 모드는 `listings`·`advertisements`와 방문 기록·체크리스트·비교 선택·후기·신고 API를 사용하며, 로그인해야 내 자료를 불러옵니다. 회원 번호는 서버 세션에서만 정하고 요청에 넣지 않습니다. 시연 후기만 브라우저에 남습니다. `api` 모드의 `/rooms` 등은 별도 서버 계약이며 팀의 실제 업무 API가 구현됐다는 뜻이 아닙니다.
 
 ## Gemini와 프록시
 
@@ -97,6 +97,7 @@ npm run evaluation:check
 - [프론트 개발 위치](frontend/README.md)
 - [백엔드 현재 구현 범위](backend/README.md)
 - [API 계약](docs/api/API_HANDOFF.md)
+- [회원 데이터·후기·신고 API](docs/api/MEMBER_DATA.md): 소유권 규칙, 방문 기록·체크리스트·비교 선택, 거주 후기·통계 캐시, 신고·관리자 처리
 - [팀 구조·DB·소유권 통합 제안](docs/sfr003/TEAM_INTEGRATION.md)
 - [실제 Gemini·로컬 검증 기록](docs/sfr003/VALIDATION.md)
 - [20건 평가 자료 준비](docs/sfr003/EVALUATION_INPUTS.md)

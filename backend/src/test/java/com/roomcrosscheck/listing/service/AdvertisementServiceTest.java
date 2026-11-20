@@ -24,15 +24,15 @@ class AdvertisementServiceTest {
         var repo = mock(AdvertisementRepository.class);
         var service = new AdvertisementService(repo, directory.toString());
         assertThrows(ResponseStatusException.class,
-            () -> service.create("request-0001", "  ", null, null, null, null));
+            () -> service.create(1L, "request-0001", "  ", null, null, null, null));
         var fake = new MockMultipartFile("image", "room.png", "image/png", "not an image".getBytes());
         assertThrows(ResponseStatusException.class,
-            () -> service.create("request-0002", "", null, null, null, fake));
+            () -> service.create(1L, "request-0002", "", null, null, null, fake));
         byte[] brokenPng = {(byte)137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0,
             'I', 'H', 'D', 'R', 0, 0, 0, 1, 0, 0, 0, 1};
         var broken = new MockMultipartFile("image", "room.png", "image/png", brokenPng);
         assertThrows(ResponseStatusException.class,
-            () -> service.create("request-0004", "", null, null, null, broken));
+            () -> service.create(1L, "request-0004", "", null, null, null, broken));
         verifyNoInteractions(repo);
     }
 
@@ -44,7 +44,7 @@ class AdvertisementServiceTest {
         var output = new ByteArrayOutputStream();
         ImageIO.write(pixels, "png", output);
         var image = new MockMultipartFile("image", "room.png", "image/png", output.toByteArray());
-        var first = service.create("request-0003", "보증금 500", "주소", null, null, image);
+        var first = service.create(1L, "request-0003", "보증금 500", "주소", null, null, image);
         assertEquals(Advertisement.Status.DRAFT, first.status());
         assertEquals("room.png", first.imageName());
         try (var files = Files.list(directory)) { assertEquals(1, files.count()); }
@@ -53,9 +53,9 @@ class AdvertisementServiceTest {
         verify(repo).save(capture.capture());
         var saved = capture.getValue();
         when(repo.findByIdempotencyKey("request-0003")).thenReturn(Optional.of(saved));
-        assertEquals(first.id(), service.create("request-0003", "보증금 500", "주소", null, null, image).id());
+        assertEquals(first.id(), service.create(1L, "request-0003", "보증금 500", "주소", null, null, image).id());
         assertThrows(ResponseStatusException.class,
-            () -> service.create("request-0003", "월세 500", "주소", null, null, image));
+            () -> service.create(1L, "request-0003", "월세 500", "주소", null, null, image));
         when(repo.findById(saved.id)).thenReturn(Optional.of(saved));
         assertEquals(Advertisement.Status.EXTRACTION_PENDING, service.confirm(saved.id).status());
         assertEquals(first.id(), service.confirm(saved.id).id());

@@ -1,4 +1,7 @@
+import { seedReviews } from "./seed.js";
 import { loadState, STORAGE_KEY } from "./localStorage.js";
+import { createApiClient } from "../../shared/lib/http.js";
+import { isDemoReview } from "../../shared/lib/domain.js";
 
 const emptyState = () => ({ rooms: [], reviews: [], visits: {} });
 const invalidResponse = () => new Error("서버 응답 형식이 맞지 않습니다. API 계약을 확인해 주세요.");
@@ -82,6 +85,8 @@ export function createLocalRepository(storage = window.localStorage) {
   }
   return {
     mode: "local", initialState: () => state, load: async () => state,
+    async saveChecklist(items) { return commit({ ...state, checklist: items }, items); },
+    async saveComparison(ids) { return commit({ ...state, comparison: ids }, ids); },
     async saveRoom(values, id) {
       const old = state.rooms.find(r => r.id === id);
       const saved = {
@@ -96,12 +101,29 @@ export function createLocalRepository(storage = window.localStorage) {
       const visits = { ...state.visits }; delete visits[id];
       return commit({ ...state, visits, rooms: state.rooms.filter(r => r.id !== id) });
     },
+    async setDemoReviews(buildings, enabled) {
+      const existing = state.reviews.filter(review => !review.id.startsWith("review-demo:"));
+      const generated = enabled ? [...new Set(buildings)].flatMap((building, buildingIndex) =>
+        Array.from({ length: 5 }, (_, index) => {
+          const template = seedReviews[index % seedReviews.length];
+          return {
+            ...template,
+            id: `review-demo:${building}:${index}`,
+            building,
+            body: `[시연용 가상 후기] ${template.body}`,
+            scores: Object.fromEntries(Object.entries(template.scores).map(([category, score], categoryIndex) =>
+              [category, score === null ? null : 2 + ((buildingIndex + index + categoryIndex) % 4)])),
+          };
+        })) : [];
+      const reviews = [...generated, ...existing];
+      return commit({ ...state, reviews }, reviews);
+    },
     async addReview(values) {
-      const saved = { ...values, id: crypto.randomUUID(), demo: false, createdAt: new Date().toISOString().slice(0, 10) };
-      return commit({ ...state, reviews: [saved, ...state.reviews] }, saved);
+      const saved = { ...values, id: crypto.randomUUID(), demo: false, mine: true, createdAt: new Date().toISOString().slice(0, 10) };
+      return commit({ ...state, reviews: [saved, ...state.reviews] }, { review: saved });
     },
     async deleteReview(id) {
-      return commit({ ...state, reviews: state.reviews.filter(r => r.id !== id || r.demo) });
+      return commit({ ...state, reviews: state.reviews.filter(r => r.id !== id || r.demo) }, {});
     },
     async saveVisit(id, value) {
       return commit({ ...state, visits: { ...state.visits, [id]: value } }, value);
@@ -109,49 +131,75 @@ export function createLocalRepository(storage = window.localStorage) {
   };
 }
 
-// Local-development bridge: only listings use MySQL; reviews and visits remain browser data.
+/**
+ * 배포 서버용 저장소. 매물·광고·방문 기록·체크리스트·비교 선택·후기를 로그인 회원 기준으로 서버에 저장한다.
+ * 시연용 가상 후기만 이 브라우저에 남기며 서버 후기와 섞어 표시한다.
+ * @param {Object} [options] API 기본 경로, 요청 함수와 시연 후기를 둘 브라우저 저장소
+ * @return {Object} RoomContext가 사용하는 저장소
+ */
 export function createListingRepository({ baseUrl = "/api", fetchImpl = globalThis.fetch, storage = window.localStorage } = {}) {
   const local = createLocalRepository(storage);
-  const url = `${baseUrl.replace(/\/$/, "")}/listings`;
+  const api = createApiClient({ baseUrl, fetchImpl });
   const asRoom = value => ({ ...value, tags: ["직접 등록"], theme: "sage", official: value.official ?? null, source: "server" });
-  async function request(path = "", method = "GET", body) {
-    let response;
-    try {
-      response = await fetchImpl(`${url}${path}`, {
-        method, credentials: "include",
-        headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      });
-    } catch { throw new Error("매물 서버에 연결하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요."); }
-    if (!response.ok) {
-      let detail;
-      try { detail = await response.json(); } catch { /* Fall back for proxy/network error pages. */ }
-      throw new Error(detail?.message || `매물 서버 요청에 실패했어요. (${response.status})`);
-    }
-    return response.status === 204 ? undefined : response.json();
+  const demoReviews = () => local.initialState().reviews.filter(isDemoReview);
+  const id = value => encodeURIComponent(value);
+  async function reviewsFor(buildings) {
+    const keys = [...new Set(buildings.filter(Boolean))].slice(0, 50);
+    if (!keys.length) return { reviews: [], stats: {} };
+    const value = await api(`/reviews?${keys.map(key => `building=${id(key)}`).join("&")}`);
+    if (!Array.isArray(value?.reviews) || !value.stats || typeof value.stats !== "object") throw invalidResponse();
+    return { reviews: value.reviews.map(review), stats: value.stats };
   }
   return {
     mode: "listing-api",
-    searchOfficial: (id, query) => request(`/${encodeURIComponent(id)}/official/search`, "POST", query),
-    async saveOfficial(id, selection) { return asRoom(await request(`/${encodeURIComponent(id)}/official`, "PUT", selection)); },
-    initialState: () => ({ rooms: [], reviews: local.initialState().reviews, visits: local.initialState().visits }),
+    searchOfficial: (listingId, query) => api(`/listings/${id(listingId)}/official/search`, { method: "POST", json: query }),
+    async saveOfficial(listingId, selection) {
+      return asRoom(await api(`/listings/${id(listingId)}/official`, { method: "PUT", json: selection }));
+    },
+    initialState: () => ({ rooms: [], reviews: [], visits: {}, reviewStats: {}, checklist: null, comparison: [] }),
     async load() {
-      const rooms = await request();
+      const rooms = await api("/listings");
       if (!Array.isArray(rooms)) throw invalidResponse();
-      const browser = await local.load();
-      return { rooms: rooms.map(value => asRoom(room({ ...value, tags: [] }))), reviews: browser.reviews, visits: browser.visits };
+      const loaded = rooms.map(value => asRoom(room({ ...value, tags: [] })));
+      const [visits, checklist, comparison, server] = await Promise.all([
+        api("/visits"), api("/visit-checklist"), api("/comparison"), reviewsFor(loaded.map(r => r.building)),
+      ]);
+      visit(visits);
+      return {
+        rooms: loaded, visits, reviews: [...demoReviews(), ...server.reviews], reviewStats: server.stats,
+        checklist: Array.isArray(checklist?.items) ? checklist.items : null,
+        comparison: Array.isArray(comparison?.listingIds) ? comparison.listingIds : [],
+      };
     },
-    async saveRoom(values, id) {
+    async saveRoom(values, listingId) {
       const payload = Object.fromEntries(["name", "address", "deposit", "rent", "fee", "area", "areaType", "floor", "original"].map(key => [key, values[key] ?? null]));
-      return asRoom(room({ ...await request(id ? `/${encodeURIComponent(id)}` : "", id ? "PATCH" : "POST", payload), tags: [] }));
+      return asRoom(room({ ...await api(listingId ? `/listings/${id(listingId)}` : "/listings",
+        { method: listingId ? "PATCH" : "POST", json: payload }), tags: [] }));
     },
-    async deleteRoom(id) {
-      await request(`/${encodeURIComponent(id)}`, "DELETE");
-      await local.deleteRoom(id);
+    deleteRoom: listingId => api(`/listings/${id(listingId)}`, { method: "DELETE" }),
+    setDemoReviews: (buildings, enabled) => local.setDemoReviews(buildings, enabled),
+    /** 후기를 저장한 뒤 그 건물의 최신 통계를 함께 돌려준다. */
+    async addReview(values) {
+      const saved = review(await api("/reviews", { method: "POST", json: values }));
+      const { stats } = await reviewsFor([saved.building]);
+      return { review: saved, stats };
     },
-    addReview: values => local.addReview(values),
-    deleteReview: id => local.deleteReview(id),
-    saveVisit: (id, value) => local.saveVisit(id, value),
+    async deleteReview(reviewId, building) {
+      await api(`/reviews/${id(reviewId)}`, { method: "DELETE" });
+      return building ? { stats: (await reviewsFor([building])).stats } : {};
+    },
+    saveVisit: async (listingId, value) => visit(await api(`/listings/${id(listingId)}/visit`, { method: "PUT", json: {
+      checks: Object.fromEntries(Object.entries(value.checks || {}).map(([key, checked]) => [key, Boolean(checked)])),
+      note: value.note || "", visitedOn: value.visitedOn || null,
+    } })),
+    async saveChecklist(items) {
+      const value = await api("/visit-checklist", { method: "PUT", json: { items } });
+      return Array.isArray(value?.items) ? value.items : null;
+    },
+    async saveComparison(ids) {
+      const value = await api("/comparison", { method: "PUT", json: { listingIds: ids } });
+      return Array.isArray(value?.listingIds) ? value.listingIds : [];
+    },
   };
 }
 

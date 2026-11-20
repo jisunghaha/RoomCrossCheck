@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { reviewedAdvertisementValues } from "../model/reviewedAdvertisement.js";
+import { createApiClient } from "../../../shared/lib/http.js";
+
+// 광고 API는 로그인 회원 본인 광고만 다루며, 쓰기 요청에는 CSRF 토큰이 필요하다.
+const api = createApiClient();
 
 const labels = {
   DRAFT: "임시 저장", EXTRACTION_PENDING: "추출 대기", EXTRACTION_READY: "추출 결과 확인 필요",
@@ -43,9 +47,7 @@ export default function AdDraftPanel({ onRegister }) {
   const key = useRef(crypto.randomUUID());
 
   async function refresh() {
-    const response = await fetch("/api/advertisements");
-    if (!response.ok) throw new Error("광고 원본 목록을 불러오지 못했어요.");
-    setDrafts(await response.json());
+    setDrafts(await api("/advertisements"));
   }
   useEffect(() => { refresh().catch((cause) => setError(cause.message)); }, []);
   const changed = () => { key.current = crypto.randomUUID(); setError(""); };
@@ -58,11 +60,9 @@ export default function AdDraftPanel({ onRegister }) {
     if (!image) data.delete("image");
     setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch("/api/advertisements", {
-        method: "POST", headers: { "Idempotency-Key": key.current }, body: data,
+      const saved = await api("/advertisements", {
+        method: "POST", headers: { "Idempotency-Key": key.current }, form: data,
       });
-      if (!response.ok) throw new Error(`원본을 저장하지 못했어요. (${response.status})`);
-      const saved = await response.json();
       await refresh();
       setMessage(`원본을 임시 저장했어요. ID: ${saved.id}`);
       form.reset(); setText(""); setImage(null); key.current = crypto.randomUUID();
@@ -72,8 +72,7 @@ export default function AdDraftPanel({ onRegister }) {
   async function confirm(id) {
     setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch(`/api/advertisements/${encodeURIComponent(id)}/confirm`, { method: "POST" });
-      if (!response.ok) throw new Error(`확정하지 못했어요. (${response.status})`);
+      await api(`/advertisements/${encodeURIComponent(id)}/confirm`, { method: "POST" });
       await refresh();
       setMessage("원본을 확정했어요. 준비되면 Gemini 추출을 시작할 수 있습니다.");
     } catch (cause) { setError(cause.message); }
@@ -83,11 +82,12 @@ export default function AdDraftPanel({ onRegister }) {
   async function extract(id) {
     setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch(`/api/advertisements/${encodeURIComponent(id)}/extract`, { method: "POST" });
-      if (!response.ok) {
-        if (response.status === 503) throw new Error("서버에 Gemini 추출 설정이 없습니다. 로컬 환경변수를 확인해 주세요.");
-        if (response.status === 429) throw new Error("Gemini 사용 한도에 도달했습니다. 나중에 다시 시도해 주세요.");
-        throw new Error(`추출에 실패했어요. (${response.status})`);
+      try {
+        await api(`/advertisements/${encodeURIComponent(id)}/extract`, { method: "POST" });
+      } catch (failure) {
+        if (failure.status === 503) throw new Error("서버에 Gemini 추출 설정이 없습니다. 로컬 환경변수를 확인해 주세요.");
+        if (failure.status === 429) throw new Error("Gemini 사용 한도에 도달했습니다. 나중에 다시 시도해 주세요.");
+        throw failure;
       }
       await refresh();
       setMessage("추출 결과가 도착했어요. 원본과 비교해 확인해 주세요.");
@@ -97,10 +97,7 @@ export default function AdDraftPanel({ onRegister }) {
   async function saveReview(id, result) {
     setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch(`/api/advertisements/${encodeURIComponent(id)}/extraction`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(result),
-      });
-      if (!response.ok) throw new Error(`확인한 값을 저장하지 못했어요. (${response.status})`);
+      await api(`/advertisements/${encodeURIComponent(id)}/extraction`, { method: "PUT", json: result });
       await refresh();
       setMessage("확인한 추출 값을 저장했어요.");
     } catch (cause) { setError(cause.message); }

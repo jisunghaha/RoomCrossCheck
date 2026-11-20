@@ -77,7 +77,7 @@ users, buildings, rooms(user_id/building_id), visits(room_id), reviews(user_id/b
 
 ## 현재 구현된 로컬 개발 연결
 
-`VITE_DATA_MODE=listing-api`에서 React는 `GET/POST /api/listings`, `PATCH/DELETE /api/listings/{id}`를 사용합니다. Spring Boot와 MySQL에 매물만 저장하고 후기·방문 기록은 브라우저에 남습니다. 위 `/rooms`, `/reviews`, `/visits` 전체 계약과 인증·권한은 후속 구현 범위입니다. 이 부분 구현을 전체 API 모드 완료로 해석하지 마세요.
+`VITE_DATA_MODE=listing-api`에서 React는 `GET/POST /api/listings`, `PATCH/DELETE /api/listings/{id}`를 사용합니다. 로그인 회원 본인의 매물만 다루며, 방문 기록·체크리스트·비교 선택·후기·신고 계약은 [회원 데이터·후기·신고 API](MEMBER_DATA.md)에 있습니다. 위 `/rooms` 형식의 API 모드 계약은 별도이며 구현되지 않았습니다.
 
 ## SFR-002 광고 원본 등록 API (현재 구현)
 
@@ -94,7 +94,7 @@ multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최�
 
 응답 필드: `id`, `status`(`DRAFT` 또는 `EXTRACTION_PENDING`), `originalText`, `addressHint`, `unitLabel`, `sourceUrl`, `imageName`, `imageContentType`, `imageSize`, `createdAt`, `confirmedAt`. 저장소 내부 경로와 파일 키는 응답에 포함하지 않습니다. `confirm` 재호출은 같은 확정 상태를 반환하며 현재는 작업 큐에 넣거나 OCR을 실행하지 않습니다. 등록·확정은 SFR-003의 입력 단계이고 기존 `/api/listings`와 자동 연결되지 않습니다.
 
-이 API는 로컬 개발 전용이며 현재 모든 광고 원본을 조회할 수 있습니다. SFR-001 인증 완료 시 생성자 소유권, 조회·확정 권한, 이미지 접근 정책을 서버에서 추가해야 합니다. 운영 환경에서는 스키마 마이그레이션과 동시 요청 멱등성 검증도 필요합니다.
+광고는 올린 회원만 조회·확정·추출·수정할 수 있고 다른 회원에게는 404로 응답합니다([소유권 규칙](MEMBER_DATA.md)). 이미지 파일을 직접 내려 주는 API는 없습니다. 운영 환경에서는 스키마 마이그레이션과 동시 요청 멱등성 검증도 필요합니다.
 
 ## SFR-003 Gemini 추출 API (현재 구현)
 
@@ -107,7 +107,7 @@ multipart 필드는 `text`(광고 글, 최대 10,000자), `image`(JPG·PNG, 최�
 
 추출·확인 값은 `rawText`(문자열), `address`(문자열 또는 null), `depositWon`, `monthlyRentWon`, `maintenanceFeeWon`(원 단위 0 이상 정수 또는 null), `areaSqm`(㎡ 또는 null), `floor`(지하 음수 포함 정수 또는 null)입니다. 확인 요청은 이 일곱 필드를 JSON 본문에 담습니다. 광고 응답에는 `extraction`(AI 원본), `reviewed`(사용자가 확인한 값), `extractionError`, `extractedAt`, `reviewedAt`가 추가됩니다. 화면은 추출 값을 자동으로 사실로 확정하지 않습니다. 건축물대장 공식 값은 별도 출처로 조회해야 합니다.
 
-Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 실제 생성 응답 HTTP 200과 정답 6개 필드 일치를 확인한 `gemini-3.5-flash-lite`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 기존 2.5 Flash·2.5 Flash Lite는 신규 사용자 지원 종료로 404를 반환했고, 3.8 Flash·Flash Latest는 혼잡으로 503을 반환했습니다. 모델 목록에 존재하는 것과 생성 가능 여부는 다릅니다. 무료 등급·해당 모델의 사용 가능 여부를 확인하고, 불확실하면 호출하지 않습니다. 현재 로그인·소유권 검증이 없어 이 API도 로컬 개발 전용입니다. 실제 호출 기록과 가짜 서버 검증 범위는 [SFR-003 검증 기록](../sfr003/VALIDATION.md)을 참고하세요.
+Gemini 키는 서버 환경변수 `GEMINI_API_KEY`에만 두고, `GEMINI_ENABLED=true`일 때만 호출합니다. 기본 모델은 실제 생성 응답 HTTP 200과 정답 6개 필드 일치를 확인한 `gemini-3.5-flash-lite`이며 `GEMINI_MODEL`로 바꿀 수 있습니다. 기존 2.5 Flash·2.5 Flash Lite는 신규 사용자 지원 종료로 404를 반환했고, 3.8 Flash·Flash Latest는 혼잡으로 503을 반환했습니다. 모델 목록에 존재하는 것과 생성 가능 여부는 다릅니다. 무료 등급·해당 모델의 사용 가능 여부를 확인하고, 불확실하면 호출하지 않습니다. 추출 요청은 광고 소유자만 보낼 수 있어 다른 회원이 이용 한도를 소모하지 못합니다. 실제 호출 기록과 가짜 서버 검증 범위는 [SFR-003 검증 기록](../sfr003/VALIDATION.md)을 참고하세요.
 
 ### 확인한 광고 값으로 매물 등록
 

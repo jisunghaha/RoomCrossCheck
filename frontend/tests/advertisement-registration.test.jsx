@@ -15,6 +15,10 @@ const draft = {
     monthlyRentWon: 123456, maintenanceFeeWon: 0, areaSqm: 20, floor: -20 },
 };
 
+// 매물 목록 외에 함께 불러오는 회원 자료의 빈 응답. 매물이 없으면 후기 요청은 보내지 않는다.
+const emptyServer = url => ({ "/api/visits": {}, "/api/visit-checklist": { items: null },
+  "/api/comparison": { listingIds: [] } }[url] ?? []);
+
 async function openAdvertisements(user = userEvent) {
   await user.click(await screen.findByRole("button", { name: "새 매물 등록" }));
   await user.click(screen.getByRole("button", { name: "광고 글·사진에서 가져오기" }));
@@ -38,7 +42,7 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
       if (failSave) return { ok: false, status: 500 };
       return { ok: true, status: 201, json: async () => ({ ...JSON.parse(options.body), id: "new-room", building: "new-building", createdAt: "2026-10-14" }) };
     }
-    return { ok: true, status: 200, json: async () => [] };
+    return { ok: true, status: 200, json: async () => emptyServer(url) };
   });
   const user = userEvent.setup();
   render(<RoomProvider repository={createListingRepository()}><App /></RoomProvider>);
@@ -63,7 +67,7 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
   await user.click(dialog.getByRole("button", { name: "최종 확인으로 이동" }));
   expect(requests.filter(([, o]) => o.method === "POST")).toHaveLength(0);
   await user.click(dialog.getByRole("button", { name: "확정 저장" }));
-  expect(await screen.findByText(/매물 서버 요청에 실패/)).toBeInTheDocument();
+  expect(await screen.findByText(/서버 요청에 실패했어요. \(500\)/)).toBeInTheDocument();
   await user.click(dialog.getByRole("button", { name: "내용 수정" }));
   expect(dialog.getByLabelText("면적 (㎡)")).toHaveValue(21);
   failSave = false;
@@ -80,7 +84,7 @@ test("reviewed ad opens editable listing form, preserves failed input, and saves
 test("cancel never creates a listing and long reviewed text is retained", async () => {
   const longDraft = { ...draft, originalText: "가".repeat(10000) };
   const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async url => ({
-    ok: true, status: 200, json: async () => url === "/api/advertisements" ? [longDraft] : [],
+    ok: true, status: 200, json: async () => url === "/api/advertisements" ? [longDraft] : emptyServer(url),
   }));
   render(<RoomProvider repository={createListingRepository()}><App /></RoomProvider>);
   await openAdvertisements();
@@ -95,7 +99,7 @@ test("cancel never creates a listing and long reviewed text is retained", async 
 test("an AI result awaiting review cannot open listing registration", async () => {
   vi.spyOn(globalThis, "fetch").mockImplementation(async url => ({
     ok: true, status: 200, json: async () => url === "/api/advertisements"
-      ? [{ ...draft, status: "EXTRACTION_READY", reviewed: null }] : [],
+      ? [{ ...draft, status: "EXTRACTION_READY", reviewed: null }] : emptyServer(url),
   }));
   render(<RoomProvider repository={createListingRepository()}><App /></RoomProvider>);
   await openAdvertisements();
