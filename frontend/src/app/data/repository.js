@@ -2,6 +2,7 @@ import { seedReviews } from "./seed.js";
 import { loadState, STORAGE_KEY } from "./localStorage.js";
 import { createApiClient } from "../../shared/lib/http.js";
 import { isDemoReview } from "../../shared/lib/domain.js";
+import { randomId } from "../../shared/lib/id.js";
 
 const emptyState = () => ({ rooms: [], reviews: [], visits: {} });
 const invalidResponse = () => new Error("서버 응답 형식이 맞지 않습니다. API 계약을 확인해 주세요.");
@@ -90,8 +91,8 @@ export function createLocalRepository(storage = window.localStorage) {
     async saveRoom(values, id) {
       const old = state.rooms.find(r => r.id === id);
       const saved = {
-        ...values, id: id || crypto.randomUUID(),
-        building: old?.address === values.address ? old.building : crypto.randomUUID(),
+        ...values, id: id || randomId(),
+        building: old?.address === values.address ? old.building : randomId(),
         tags: old?.tags || ["직접 등록"], theme: old?.theme || "sage", official: null,
         createdAt: old?.createdAt || new Date().toISOString().slice(0, 10),
       };
@@ -119,7 +120,7 @@ export function createLocalRepository(storage = window.localStorage) {
       return commit({ ...state, reviews }, reviews);
     },
     async addReview(values) {
-      const saved = { ...values, id: crypto.randomUUID(), demo: false, mine: true, createdAt: new Date().toISOString().slice(0, 10) };
+      const saved = { ...values, id: randomId(), demo: false, mine: true, createdAt: new Date().toISOString().slice(0, 10) };
       return commit({ ...state, reviews: [saved, ...state.reviews] }, { review: saved });
     },
     async deleteReview(id) {
