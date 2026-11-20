@@ -14,8 +14,17 @@
 		reverse_proxy backend:8080
 	}
 
+	# 빌드 파일 이름에 내용 해시가 붙으므로 오래 캐시해도 새 배포와 섞이지 않는다.
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		root * /srv
+		file_server
+	}
+
 	# 해시 라우팅 SPA이므로 없는 경로는 index.html로 돌려준다.
+	# index.html은 매번 서버에 확인하게 해 배포 직후에도 새 번들 이름을 받게 한다.
 	handle {
+		header Cache-Control "no-cache"
 		root * /srv
 		try_files {path} /index.html
 		file_server
