@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRooms } from "./state/RoomContext.jsx";
 import { useHashRoute } from "./routing/useHashRoute.js";
 import Layout from "./layout/Layout.jsx";
@@ -12,38 +12,65 @@ import ReviewsPage from "../features/review/pages/ReviewsPage.jsx";
 import VisitsPage from "../features/visit/pages/VisitsPage.jsx";
 import RegisterRoomPage from "../features/listing/pages/RegisterRoomPage.jsx";
 import CommunityPage from "../features/community/CommunityPage.jsx";
+import ReportsPage from "../features/report/ReportsPage.jsx";
+const independentPages = ["community", "reports"];
 export default function App() {
   const [page, navigate] = useHashRoute();
   const [authRevision, setAuthRevision] = useState(0);
-  const onSessionChange = useCallback(() => setAuthRevision(value => value + 1), []);
-  const { rooms, deleteRoom, toast, loading, loadError, saving, reload, dataMode } = useRooms();
+  const [member, setMember] = useState(null);
+  const { rooms, deleteRoom, toast, loading, loadError, authRequired, saving, reload, dataMode } = useRooms();
+  const memberId = useRef(undefined);
+  const onSessionChange = useCallback((value) => {
+    setMember(value ?? null);
+    setAuthRevision(revision => revision + 1);
+  }, []);
+  // 창 포커스마다 오는 세션 확인은 무시하고, 로그인·로그아웃으로 회원이 바뀐 경우에만 내 자료를 다시 불러온다.
+  useEffect(() => {
+    const id = member?.id ?? null;
+    if (memberId.current === undefined) { memberId.current = id; return; }
+    if (memberId.current === id) return;
+    memberId.current = id;
+    if (dataMode !== "local") reload();
+  }, [member, dataMode]);
   const [modal, setModal] = useState(null),
     [visitRoom, setVisitRoom] = useState(null);
   const close = () => setModal(null),
     room = rooms.find((r) => r.id === modal?.id);
-  if (page !== "community" && (loading || loadError)) return (
-    <main><p role={loadError ? "alert" : "status"}>{loadError || "매물을 불러오는 중이에요…"}</p>
-      {loadError && <button onClick={reload}>다시 불러오기</button>}
-    </main>
-  );
+  const blocked = !independentPages.includes(page) && (loading || loadError || authRequired);
   return (
     <>
-      <fieldset disabled={page !== "community" && saving} className="data-operation-boundary" aria-busy={page !== "community" && saving}>
-      <Layout page={page} onGuide={() => setModal({ type: "guide" })} onSessionChange={onSessionChange}>
-        {page === "register" && <RegisterRoomPage navigate={navigate} />}
+      <fieldset disabled={!independentPages.includes(page) && saving} className="data-operation-boundary" aria-busy={!independentPages.includes(page) && saving}>
+      <Layout page={page} member={member} onGuide={() => setModal({ type: "guide" })} onSessionChange={onSessionChange}>
+        {blocked && (
+          <div className={authRequired ? "empty large" : undefined}>
+            {authRequired ? (
+              <>
+                <h2>로그인하면 내 매물을 볼 수 있어요</h2>
+                <p>매물·방문 기록·비교 선택은 회원별로 저장됩니다. 왼쪽 계정 카드에서 로그인하거나 회원가입해 주세요.</p>
+              </>
+            ) : (
+              <>
+                <p role={loadError ? "alert" : "status"}>{loadError || "매물을 불러오는 중이에요…"}</p>
+                {loadError && <button onClick={reload}>다시 불러오기</button>}
+              </>
+            )}
+          </div>
+        )}
+        {page === "reports" && <ReportsPage member={member} />}
+        {!blocked && page === "register" && <RegisterRoomPage navigate={navigate} />}
         {page === "community" && <CommunityPage authRevision={authRevision} />}
-        {page === "rooms" && (
+        {!blocked && page === "rooms" && (
           <RoomsPage
             onAdd={() => navigate("register")}
             onDetail={(id) => setModal({ type: "detail", id })}
             navigate={navigate}
           />
         )}
-        {page === "compare" && <ComparePage navigate={navigate} />}
-        {page === "reviews" && (
+        {!blocked && page === "compare" && <ComparePage navigate={navigate} />}
+        {!blocked && page === "reviews" && (
           <ReviewsPage onAdd={() => setModal({ type: "review" })} />
         )}
-        {page === "visits" && (
+        {!blocked && page === "visits" && (
           <VisitsPage key={visitRoom || "default"} initialRoom={visitRoom} />
         )}
       </Layout>
@@ -139,7 +166,7 @@ export default function App() {
                 {dataMode === "local"
                   ? "현재 매물 데이터는 이 브라우저에 저장됩니다. 회원가입·로그인은 연결된 서버를 이용합니다."
                   : dataMode === "listing-api"
-                    ? "매물은 MySQL에 저장됩니다. 광고 추출은 사용자 확인 후 매물 입력에 활용합니다. 후기·방문 기록은 이 브라우저에만 저장됩니다. 회원가입·로그인은 연결된 서버를 이용합니다."
+                    ? "매물·광고·방문 기록·체크리스트·비교 선택은 로그인한 회원별로 서버에 저장되며 본인만 볼 수 있습니다. 거주 후기는 건물 기준으로 공개되고, 시연 후기만 이 브라우저에 남습니다."
                     : "데이터는 연결된 서버를 통해 저장됩니다. 회원가입·로그인을 이용할 수 있으며 OCR·공공 API 제공 여부는 서버 구현에 따라 달라집니다."}
               </div>
             </>

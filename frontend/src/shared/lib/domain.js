@@ -8,6 +8,31 @@ export const categories = [
   "벌레",
   "결로",
 ];
+const checklistTips = [
+  "복도와 이웃집 소음",
+  "온수와 수압 확인",
+  "낮 시간 햇빛 방향",
+  "창문·환풍기 작동",
+  "주차 가능 대수와 비용",
+  "공용부 청결과 관리",
+  "방충망·틈새·흔적",
+  "창틀·벽면 습기",
+  "수도·인터넷·전기 포함 여부",
+];
+/**
+ * 기본 방문 체크리스트. ID는 기존 브라우저 기록의 체크 순번(0~8)과 같아 이전 기록을 그대로 읽는다.
+ */
+export const defaultChecklist = [...categories, "관리비 포함 항목"].map((label, index) => ({
+  id: String(index), label, tip: checklistTips[index],
+}));
+/** 회원이 구성한 체크리스트가 없으면 기본 항목을 돌려준다. */
+export const checklistItems = (custom) => (Array.isArray(custom) && custom.length ? custom : defaultChecklist);
+/** 현재 체크리스트 기준으로 확인 완료한 항목 수를 센다. 삭제한 항목의 과거 체크는 세지 않는다. */
+export function checkedCount(visit, items) {
+  const checks = visit?.checks || {};
+  return items.filter((item) => checks[item.id]).length;
+}
+export const isDemoReview = (review) => typeof review?.id === "string" && review.id.startsWith("review-demo:");
 export const money = (v) =>
   v == null
     ? "정보 없음"
@@ -92,6 +117,18 @@ export function statistics(reviews, building) {
       };
     }),
   };
+}
+/**
+ * 건물 통계를 고른다. 서버 통계가 있고 그 건물에 브라우저 시연 후기가 없으면 서버 값을, 아니면 화면의 후기로 계산한다.
+ * @param {Array} reviews 화면에 표시 중인 후기
+ * @param {string} building 건물 키
+ * @param {Object} [serverStats] 건물 키별 서버 통계
+ * @return {{count: number, items: Array}} 후기 수와 항목별 평균
+ */
+export function buildingStatistics(reviews, building, serverStats) {
+  const server = serverStats?.[building];
+  if (server && !reviews.some((review) => review.building === building && isDemoReview(review))) return server;
+  return statistics(reviews, building);
 }
 export function validateComparison(ids) {
   return ids.length >= 2 && ids.length <= 3 && new Set(ids).size === ids.length;

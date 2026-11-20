@@ -18,8 +18,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * 실제 회원 로그인·세션·CSRF와 커뮤니티의 인증 접근을 관리한다.
- * <p>매물·방문 API의 소유자 검사는 별도 통합 대상이며 이 필터는 auth·community 경로에 한정한다.
+ * 실제 회원 로그인·세션·CSRF와 모든 {@code /api} 경로의 인증 접근을 관리한다.
+ * <p>공개 조회는 커뮤니티 글과 거주 후기로 한정한다. 매물·광고·건축물대장·방문 기록·비교 선택·신고는
+ * 로그인을 요구하며, 각 서비스가 회원 번호로 소유권을 다시 확인한다. 관리자 API는 ADMIN 권한만 허용한다.
+ * 쿠키 세션을 쓰므로 GET이 아닌 모든 요청에 CSRF 토큰이 필요하다.
  */
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfiguration {
@@ -30,7 +32,7 @@ public class SecurityConfiguration {
     SecurityFilterChain memberSecurity(HttpSecurity http, ObjectMapper mapper) throws Exception {
         var csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrf.setCookieCustomizer(cookie -> cookie.path("/").sameSite("Lax"));
-        http.securityMatcher("/api/auth/**", "/api/community/**")
+        http.securityMatcher("/api/**")
             .csrf(config -> config.csrfTokenRepository(csrf).csrfTokenRequestHandler(new SpaCsrfHandler()))
             .requestCache(cache -> cache.disable())
             .exceptionHandling(errors -> errors
@@ -38,15 +40,21 @@ public class SecurityConfiguration {
                 .accessDeniedHandler((request, response, error) -> {
                     var actor = SecurityContextHolder.getContext().getAuthentication();
                     boolean guest = actor == null || !actor.isAuthenticated() || actor instanceof AnonymousAuthenticationToken;
-                    boolean communityWrite = request.getRequestURI().startsWith(request.getContextPath() + "/api/community/")
+                    // 비로그인 쓰기는 CSRF 실패보다 로그인 필요를 먼저 안내한다. 가입·로그인 요청은 CSRF 오류로 남긴다.
+                    boolean memberWrite = !request.getRequestURI().startsWith(request.getContextPath() + "/api/auth/")
                         && !"GET".equals(request.getMethod()) && !"HEAD".equals(request.getMethod());
-                    int status = guest && communityWrite ? 401 : 403;
+                    int status = guest && memberWrite ? 401 : 403;
                     json(mapper, response, status, status == 401 ? "로그인이 필요합니다." : "권한 또는 보안 토큰을 확인해 주세요.");
                 }))
             .authorizeHttpRequests(requests -> requests
-                .requestMatchers(HttpMethod.GET, "/api/auth/config", "/api/auth/csrf", "/api/community/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/auth/config", "/api/auth/csrf", "/api/community/**",
+                    "/api/reviews").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/me", "/api/auth/logout", "/api/community/**").authenticated()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/auth/me", "/api/auth/logout", "/api/community/**",
+                    "/api/listings", "/api/listings/**", "/api/advertisements", "/api/advertisements/**",
+                    "/api/visits", "/api/visit-checklist", "/api/comparison",
+                    "/api/reviews", "/api/reviews/**", "/api/reports").authenticated()
                 .anyRequest().denyAll())
             .sessionManagement(session -> session.sessionFixation(fixation -> fixation.changeSessionId()))
             .formLogin(login -> login.loginProcessingUrl("/api/auth/login")

@@ -39,6 +39,7 @@ test("guest is distinct from connection failure or a malformed member response",
 });
 
 test("missing CSRF prevents writes, and login failures preserve the server error", async () => {
+  document.cookie = "XSRF-TOKEN=; Max-Age=0; path=/";
   const missing = vi.fn(async () => response({ ready: true }));
   await expect(createAuthApi({ fetchImpl: missing }).login("member.one", "wrong")).rejects.toThrow("쿠키 설정");
   expect(missing).toHaveBeenCalledTimes(1);

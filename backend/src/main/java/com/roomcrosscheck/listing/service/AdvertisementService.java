@@ -5,7 +5,6 @@ import com.roomcrosscheck.listing.dto.AdvertisementResponse;
 import com.roomcrosscheck.listing.repository.AdvertisementRepository;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,14 +34,38 @@ public class AdvertisementService {
         this.storageDirectory = Path.of(storageDirectory).toAbsolutePath().normalize();
     }
 
-    public List<AdvertisementResponse> all() {
-        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+    /**
+     * 회원 본인이 올린 광고를 최신순으로 조회한다.
+     *
+     * @param ownerId 서버 세션의 회원 번호
+     * @return 광고 목록
+     */
+    public List<AdvertisementResponse> all(Long ownerId) {
+        return repository.findAllByOwnerIdOrderByCreatedAtDesc(ownerId)
             .stream().map(AdvertisementResponse::from).toList();
     }
 
     public AdvertisementResponse one(String id) { return AdvertisementResponse.from(find(id)); }
 
-    public AdvertisementResponse create(String key, String text, String addressHint,
+    /**
+     * 광고가 해당 회원의 것인지 확인한다. 다른 회원의 광고는 존재 여부를 드러내지 않는다.
+     *
+     * @param id 광고 ID
+     * @param ownerId 서버 세션의 회원 번호
+     * @throws ResponseStatusException 없거나 다른 회원의 광고면 404
+     */
+    public void requireOwned(String id, Long ownerId) {
+        if (ownerId == null || !Objects.equals(find(id).ownerId, ownerId))
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * 광고 원본을 임시 저장한다. 같은 요청 키는 같은 회원·같은 내용일 때만 기존 결과를 돌려준다.
+     *
+     * @param ownerId 서버 세션의 회원 번호
+     * @return 저장한 광고
+     */
+    public AdvertisementResponse create(Long ownerId, String key, String text, String addressHint,
             String unitLabel, String sourceUrl, MultipartFile image) {
         if (key == null || !key.matches("[A-Za-z0-9-]{8,128}")) bad("유효한 Idempotency-Key가 필요합니다.");
         String original = text == null ? "" : text;
@@ -64,11 +87,13 @@ public class AdvertisementService {
         String hash = hash(original, addressHint, unitLabel, sourceUrl, bytes);
         var existing = repository.findByIdempotencyKey(key);
         if (existing.isPresent()) {
-            if (!Objects.equals(existing.get().requestHash, hash))
+            // 요청 키는 전역 유일하므로 다른 회원의 키를 재사용해 남의 광고를 받아 가지 못하게 한다.
+            if (!Objects.equals(existing.get().ownerId, ownerId) || !Objects.equals(existing.get().requestHash, hash))
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "같은 요청 키에 다른 내용이 사용됐습니다.");
             return AdvertisementResponse.from(existing.get());
         }
         Advertisement ad = new Advertisement();
+        ad.ownerId = ownerId;
         ad.idempotencyKey = key;
         ad.requestHash = hash;
         ad.originalText = original;

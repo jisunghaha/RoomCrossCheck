@@ -4,12 +4,19 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * SFR-002 광고 원본과 추출·확인 값을 advertisements 테이블에 매핑한다.
+ * <p>광고는 올린 회원만 조회·추출·수정할 수 있다. 회원 연결 전의 기존 행은 소유자가 없어 표시되지 않는다.
+ */
 @Entity
-@Table(name = "advertisements", uniqueConstraints = @UniqueConstraint(columnNames = "idempotency_key"))
+@Table(name = "advertisements", uniqueConstraints = @UniqueConstraint(columnNames = "idempotency_key"),
+    indexes = @Index(name = "idx_advertisements_owner", columnList = "owner_id"))
 public class Advertisement {
     public enum Status { DRAFT, EXTRACTION_PENDING, EXTRACTION_READY, EXTRACTION_FAILED, REVIEWED }
 
     @Id public String id = UUID.randomUUID().toString();
+    /** 광고를 올린 회원의 users.id. 응답 DTO에 포함하지 않는다. */
+    @Column(name = "owner_id", updatable = false, columnDefinition = "bigint unsigned") public Long ownerId;
     @Column(name = "idempotency_key", nullable = false, length = 128) public String idempotencyKey;
     @Column(nullable = false, length = 64) public String requestHash;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 32) public Status status = Status.DRAFT;

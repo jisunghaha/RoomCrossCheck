@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon, PageHeading } from "../../shared/ui/UI.jsx";
 import Modal from "../../shared/ui/Modal.jsx";
 import { createCommunityApi } from "./api.js";
+import ReportButton from "../report/ReportButton.jsx";
 import "./community.css";
 
 const guest = { authenticated: false, userId: null, administrator: false };
@@ -161,6 +162,10 @@ function PostDetail({ api, postId, session, sessionReady, onPermissionError }) {
           <a className="text-button" href={`${postLink(postId)}/edit`}>게시글 수정</a>
           <button className="text-button danger" disabled={mutation.busy} onClick={() => { mutation.clearError(); setConfirmDelete(true); }}>게시글 삭제</button>
         </div>}
+        {/* 다른 회원의 글만 신고할 수 있다. 서버도 본인 글 신고를 거부한다. */}
+        {session.authenticated && !owns(post, session) && <div className="community-inline-actions">
+          <ReportButton targetType="POST" targetId={post.id} />
+        </div>}
       </div>
       {mutation.error && !confirmDelete && <p className="community-error" role="alert">{mutation.error}</p>}
     </article>}
@@ -249,6 +254,9 @@ function Comments({ api, postId, session, onPermissionError }) {
         {session.authenticated && (session.administrator || owns(comment, session)) && <div className="community-inline-actions">
           <button className="text-button" disabled={mutation.busy} onClick={() => { mutation.clearError(); setEditing({ id: comment.id, content: comment.content }); }}>댓글 수정</button>
           <button className="text-button danger" disabled={mutation.busy} onClick={() => { mutation.clearError(); setDeleting(comment); }}>댓글 삭제</button>
+        </div>}
+        {session.authenticated && !owns(comment, session) && <div className="community-inline-actions">
+          <ReportButton targetType="COMMENT" targetId={comment.id} postId={postId} />
         </div>}</div>
       {editing?.id === comment.id ? <form onSubmit={event => submit(event, comment.id)}>
         <label className="field">댓글 수정 내용<textarea required rows={3} value={editing.content} disabled={mutation.busy || !session.authenticated}

@@ -48,23 +48,45 @@ test("API initial load can recover by retry without displaying demo", async () =
   const repo = { mode: "api", initialState: () => ({ rooms: [], reviews: [], visits: {} }),
     load: vi.fn().mockRejectedValueOnce(new Error("연결 실패")).mockResolvedValue({ rooms: [], reviews: [], visits: {} }) };
   render(<RoomProvider repository={repo}><App /></RoomProvider>);
-  expect(await screen.findByRole("alert")).toHaveTextContent("연결 실패");
+  expect(await screen.findByText("연결 실패")).toHaveAttribute("role", "alert");
   await userEvent.click(screen.getByRole("button", { name: "다시 불러오기" }));
   expect(await screen.findByRole("button", { name: "새 매물 등록" })).toBeInTheDocument();
   expect(screen.queryByText("햇살이 머무는 첫 자취방")).not.toBeInTheDocument();
 });
 
-test("listing bridge loads only DB rooms and saves through listings API", async () => {
+test("listing bridge loads member data from the server and keeps only demo reviews in the browser", async () => {
   const { createListingRepository } = await import("../src/app/data/repository.js");
-  const saved = { id: "db-1", building: "building-1", name: "DB 방", address: "주소", createdAt: "2026-10-14" };
-  const fetchImpl = vi.fn().mockResolvedValueOnce({ ok: true, status: 200, json: async () => [saved] })
-    .mockResolvedValueOnce({ ok: true, status: 201, json: async () => saved });
+  const saved = { id: "db-1", building: "addr:주소", name: "DB 방", address: "주소", createdAt: "2026-10-14" };
+  const serverReview = { id: "rv-1", building: "addr:주소", scores: { 방음: 4 }, mine: false };
+  const stats = { "addr:주소": { count: 1, items: [] } };
+  const fetchImpl = vi.fn(async (url, options = {}) => {
+    const json = url === "/api/listings" && options.method === "POST" ? saved
+      : url === "/api/listings" ? [saved]
+      : url === "/api/visits" ? { "db-1": { checks: { 0: true }, note: "", visitedOn: "2026-11-01" } }
+      : url === "/api/visit-checklist" ? { items: [{ id: "c-1", label: "보일러", tip: "" }] }
+      : url === "/api/comparison" ? { listingIds: ["db-1"] }
+      : url.startsWith("/api/reviews?") ? { reviews: [serverReview], stats } : null;
+    return { ok: true, status: 200, json: async () => json };
+  });
+  localStorage.setItem("oneroom.frontend.v1", JSON.stringify({ rooms: [], visits: {}, reviews: [
+    { id: "review-demo:addr:주소:0", building: "addr:주소", scores: {}, demo: true },
+    { id: "local-only", building: "addr:주소", scores: {}, demo: false },
+  ] }));
   const repo = createListingRepository({ fetchImpl });
   const loaded = await repo.load();
-  expect(loaded.rooms).toHaveLength(1);
   expect(loaded.rooms[0]).toMatchObject({ id: "db-1", source: "server", official: null });
-  expect(loaded.reviews.length).toBeGreaterThan(0);
+  expect(loaded.reviews.map(r => r.id)).toEqual(["review-demo:addr:주소:0", "rv-1"]);
+  expect(loaded).toMatchObject({ reviewStats: stats, comparison: ["db-1"], checklist: [{ id: "c-1" }] });
+  expect(fetchImpl.mock.calls.find(([url]) => url.startsWith("/api/reviews?"))[0]).toBe("/api/reviews?building=addr%3A%EC%A3%BC%EC%86%8C");
   await repo.saveRoom({ name: "DB 방", address: "주소", fee: null });
-  expect(fetchImpl.mock.calls[1][0]).toBe("/api/listings");
-  expect(fetchImpl.mock.calls[1][1]).toMatchObject({ method: "POST" });
+  const [, post] = fetchImpl.mock.calls.find(([url, o]) => url === "/api/listings" && o.method === "POST");
+  expect(post.headers["X-XSRF-TOKEN"]).toBe("test-csrf");
+  expect(JSON.parse(post.body)).toMatchObject({ name: "DB 방", address: "주소", fee: null });
+});
+test("listing bridge asks for login instead of showing demo data when the session is missing", async () => {
+  const { createListingRepository } = await import("../src/app/data/repository.js");
+  const fetchImpl = vi.fn(async () => ({ ok: false, status: 401, json: async () => ({ message: "로그인이 필요합니다." }) }));
+  render(<RoomProvider repository={createListingRepository({ fetchImpl })}><App /></RoomProvider>);
+  expect(await screen.findByRole("heading", { name: "로그인하면 내 매물을 볼 수 있어요" })).toBeInTheDocument();
+  expect(screen.queryByText("햇살이 머무는 첫 자취방")).not.toBeInTheDocument();
 });

@@ -8,8 +8,10 @@ export const navigation = [
   ["visits", "book", "방문 체크리스트"],
   ["community", "review", "커뮤니티"],
 ];
-export default function Layout({ page, onGuide, onSessionChange, children }) {
+export default function Layout({ page, member, onGuide, onSessionChange, children }) {
   const { rooms, dataMode } = useRooms();
+  // 신고 관리 메뉴는 관리자에게만 보인다. 실제 권한은 서버의 /api/admin 검사로 보장한다.
+  const items = member?.role === "ADMIN" ? [...navigation, ["reports", "shield", "신고 관리"]] : navigation;
   return (
     <>
       <aside className="sidebar">
@@ -23,7 +25,7 @@ export default function Layout({ page, onGuide, onSessionChange, children }) {
         <AuthPanel onSessionChange={onSessionChange} />
         <div className="nav-label">MY WORKSPACE</div>
         <nav className="workspace-navigation" aria-label="주요 메뉴">
-          {navigation.map(([p, icon, title]) => (
+          {items.map(([p, icon, title]) => (
             <a
               key={p}
               href={`#${p}`}
@@ -58,14 +60,14 @@ export default function Layout({ page, onGuide, onSessionChange, children }) {
         <header className="topbar">
           <div>
             나의 자취 준비 <span>/</span>
-            <strong>{page === "register" ? "매물 등록" : navigation.find((n) => n[0] === page)?.[2]}</strong>
+            <strong>{page === "register" ? "매물 등록" : page === "reports" ? "신고 관리" : navigation.find((n) => n[0] === page)?.[2]}</strong>
           </div>
           {/* COMMUNITY·SERVER 배지는 제거했다. 계정 접근은 왼쪽 카드로 모으고 저장 방식은 기존 하단 안내를 유지한다. */}
         </header>
         <div className="content">{children}</div>
         <footer>
           원룸체크 <span>더 나은 자취의 시작</span>
-          <span>{page === "community" ? "게시글과 댓글은 연결된 서버를 통해 저장됩니다." : dataMode === "local" ? "모든 초기 매물·공식 기록·후기는 가상 예시입니다." : "연결된 서버의 데이터를 표시합니다."}</span>
+          <span>{page === "community" || page === "reports" ? "게시글·댓글·신고는 연결된 서버를 통해 저장됩니다." : dataMode === "local" ? "모든 초기 매물·공식 기록·후기는 가상 예시입니다." : "연결된 서버의 데이터를 표시합니다."}</span>
         </footer>
       </main>
     </>

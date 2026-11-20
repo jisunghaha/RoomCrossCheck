@@ -65,6 +65,8 @@ public class BuildingLedgerService {
         Unit u=unitId==null || unitId.isBlank()?null:search.units().stream().filter(x -> x.id().equals(unitId)).findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"조회한 호실을 선택해 주세요."));
         if (u!=null && search.buildings().size()!=1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         listing.official=new OfficialRecord("국토교통부 건축HUB 건축물대장",search.fetchedAt().toString(),b.id(),b.address(),b.jibunAddress(),b.name(),b.dong(),u==null?null:u.ho(),b.use(),b.approvedOn(),b.aboveGroundFloors(),b.undergroundFloors(),u==null?"건물":"호실",u==null?null:u.area(),"전용",u==null?null:u.floor(),addressMatches(listing.address,b.address(),b.jibunAddress()));
+        // 공식 건물을 확정하면 같은 건물의 후기가 주소 표기와 관계없이 묶이도록 건물 키를 바꾼다.
+        listing.refreshBuilding();
         Listing saved=repository.save(listing);
         searches.remove(searchId);
         return saved;

@@ -1,16 +1,21 @@
 import { useRooms } from "../../../app/state/RoomContext.jsx";
 import {
   audit,
+  buildingStatistics,
   categories,
+  checkedCount,
+  checklistItems,
   fixedCost,
   money,
-  statistics,
   validateComparison,
 } from "../../../shared/lib/domain.js";
 import { AuditBadge, Icon, PageHeading, RoomScene } from "../../../shared/ui/UI.jsx";
 export default function ComparePage({ navigate }) {
-  const { rooms, reviews, visits, selected, toggleSelected } = useRooms();
-  const chosen = rooms.filter((r) => selected.includes(r.id));
+  const { rooms, reviews, reviewStats, visits, checklist, selected, toggleSelected } = useRooms();
+  // 선택한 순서대로 비교 열을 보여 준다. 선택은 회원별로 저장돼 새로고침 후에도 유지된다.
+  const chosen = selected.map((id) => rooms.find((r) => r.id === id)).filter(Boolean);
+  const items = checklistItems(checklist);
+  const stats = (r) => buildingStatistics(reviews, r.building, reviewStats);
   const rows = [
     ["보증금", (r) => money(r.deposit)],
     ["월세", (r) => money(r.rent)],
@@ -29,12 +34,12 @@ export default function ComparePage({ navigate }) {
     ],
     [
       "거주 후기",
-      (r) => `${statistics(reviews, r.building).count}건 · 건물 기준`,
+      (r) => `${stats(r).count}건 · 건물 기준`,
     ],
     ...categories.map((c) => [
       c,
       (r) => {
-        const s = statistics(reviews, r.building).items.find(
+        const s = stats(r).items.find(
           (i) => i.label === c,
         );
         return s.value == null ? (
@@ -52,7 +57,7 @@ export default function ComparePage({ navigate }) {
     [
       "방문 확인",
       (r) =>
-        `${Object.values(visits[r.id]?.checks || {}).filter(Boolean).length} / 9개 완료`,
+        `${checkedCount(visits[r.id], items)} / ${items.length}개 완료${visits[r.id]?.visitedOn ? ` · ${visits[r.id].visitedOn} 방문` : ""}`,
     ],
   ];
   return (
