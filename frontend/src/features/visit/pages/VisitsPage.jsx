@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRooms } from "../../../app/state/RoomContext.jsx";
 import { audit, checkedCount, checklistItems, defaultChecklist } from "../../../shared/lib/domain.js";
 import { Field, Icon, PageHeading } from "../../../shared/ui/UI.jsx";
+import { randomId } from "../../../shared/lib/id.js";
 
 const MAX_ITEMS = 30;
 
@@ -57,7 +58,7 @@ function ChecklistEditor({ items, custom, onClose }) {
         </div>
       ))}
       <button type="button" className="secondary" disabled={draft.length >= MAX_ITEMS}
-        onClick={() => setDraft((rows) => [...rows, { id: `c-${crypto.randomUUID().slice(0, 8)}`, label: "", tip: "" }])}>
+        onClick={() => setDraft((rows) => [...rows, { id: `c-${randomId().slice(0, 8)}`, label: "", tip: "" }])}>
         <Icon name="plus" /> 항목 추가
       </button>
       {error && <p role="alert">{error}</p>}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { reviewedAdvertisementValues } from "../model/reviewedAdvertisement.js";
 import { createApiClient } from "../../../shared/lib/http.js";
+import { randomId } from "../../../shared/lib/id.js";
 
 // 광고 API는 로그인 회원 본인 광고만 다루며, 쓰기 요청에는 CSRF 토큰이 필요하다.
 const api = createApiClient();
@@ -44,13 +45,13 @@ export default function AdDraftPanel({ onRegister }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const key = useRef(crypto.randomUUID());
+  const key = useRef(randomId());
 
   async function refresh() {
     setDrafts(await api("/advertisements"));
   }
   useEffect(() => { refresh().catch((cause) => setError(cause.message)); }, []);
-  const changed = () => { key.current = crypto.randomUUID(); setError(""); };
+  const changed = () => { key.current = randomId(); setError(""); };
 
   async function submit(event) {
     event.preventDefault();
@@ -65,7 +66,7 @@ export default function AdDraftPanel({ onRegister }) {
       });
       await refresh();
       setMessage(`원본을 임시 저장했어요. ID: ${saved.id}`);
-      form.reset(); setText(""); setImage(null); key.current = crypto.randomUUID();
+      form.reset(); setText(""); setImage(null); key.current = randomId();
     } catch (cause) { setError(cause.message); }
     finally { setBusy(false); }
   }
