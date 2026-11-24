@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -46,6 +47,7 @@ public class ReviewService {
      * @param viewerId 로그인 회원 번호, 비로그인이면 null
      * @return 최신순 후기 목록과 건물별 통계
      */
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public ReviewListResponse list(List<String> buildingKeys, Long viewerId) {
         var keys = new LinkedHashSet<String>();
         for (String key : buildingKeys == null ? List.<String>of() : buildingKeys) {
@@ -88,7 +90,7 @@ public class ReviewService {
         review.body = request.body().strip();
         review.scores = scores;
         BuildingReview saved = reviews.saveAndFlush(review);
-        statistics.evict(saved.buildingKey);
+        statistics.evictAfterCommit(saved.buildingKey);
         return ReviewResponse.from(saved, author.userId());
     }
 
@@ -108,7 +110,7 @@ public class ReviewService {
         }
         reviews.delete(review);
         reviews.flush();
-        statistics.evict(review.buildingKey);
+        statistics.evictAfterCommit(review.buildingKey);
     }
 
     private static String buildingLabel(Listing listing) {

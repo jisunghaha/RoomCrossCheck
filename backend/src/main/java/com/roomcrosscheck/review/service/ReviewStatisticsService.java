@@ -15,10 +15,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * SFR-018 건물별 후기 통계를 계산하고 PER-002에 따라 서버 메모리에 캐시한다.
- * <p>후기를 작성·삭제하면 해당 건물의 캐시를 즉시 지운다. 다른 서버 인스턴스의 변경은 반영되지 않으므로
+ * <p>후기 작성·삭제가 커밋되면 해당 건물의 캐시를 지운다. 다른 서버 인스턴스의 변경은 반영되지 않으므로
  * 10분 만료로 보정한다. 서버를 재시작하면 캐시는 비며 다음 조회 때 다시 계산한다.
  */
 @Service
@@ -52,16 +54,26 @@ public class ReviewStatisticsService {
             Cached cached = cache.get(key);
             if (cached == null || !cached.expires().isAfter(now)) {
                 if (cache.size() >= MAX_ENTRIES) cache.clear();
-                cached = new Cached(calculate(reviews.findAllByBuildingKey(key)), now.plus(TTL));
-                cache.put(key, cached);
+                cached = cache.compute(key, (building, current) -> {
+                    if (current != null && current.expires().isAfter(now)) return current;
+                    return new Cached(calculate(reviews.findAllByBuildingKey(building)), now.plus(TTL));
+                });
             }
             result.put(key, cached.value());
         }
         return result;
     }
 
-    /** 후기가 바뀐 건물의 캐시를 지운다. */
-    public void evict(String buildingKey) { cache.remove(buildingKey); }
+    /** 작성·삭제 트랜잭션이 커밋된 뒤 해당 건물의 캐시를 지운다. */
+    void evictAfterCommit(String buildingKey) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void afterCommit() { cache.remove(buildingKey); }
+            });
+        } else {
+            cache.remove(buildingKey);
+        }
+    }
 
     /**
      * 후기 목록으로 항목별 평균을 계산한다. 1~5 범위 밖이나 null 점수는 제외한다.
