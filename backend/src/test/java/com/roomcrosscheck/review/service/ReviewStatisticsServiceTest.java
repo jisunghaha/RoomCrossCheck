@@ -50,7 +50,7 @@ class ReviewStatisticsServiceTest {
         verify(repository, times(1)).findAllByBuildingKey("b");
 
         when(repository.findAllByBuildingKey("b")).thenReturn(List.of(review(5, 5), review(1, 1)));
-        service.evict("b");
+        service.evictAfterCommit("b");
         assertEquals(2, service.statistics(List.of("b")).get("b").count());
         verify(repository, times(2)).findAllByBuildingKey("b");
 
